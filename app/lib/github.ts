@@ -105,6 +105,20 @@ export async function getLatestCommitSha(
   branch: string,
   token?: string | null
 ): Promise<string | null> {
+  const info = await getLatestCommitInfo(repoUrl, branch, token);
+  return info?.sha ?? null;
+}
+
+export type LatestCommitInfo = { sha: string; message: string };
+
+/**
+ * Fetch the latest commit SHA and message on the given branch.
+ */
+export async function getLatestCommitInfo(
+  repoUrl: string,
+  branch: string,
+  token?: string | null
+): Promise<LatestCommitInfo | null> {
   const parsed = parseRepoUrl(repoUrl);
   if (!parsed) return null;
   const { owner, repo } = parsed;
@@ -117,9 +131,11 @@ export async function getLatestCommitSha(
   try {
     const res = await fetch(url, { headers, next: { revalidate: 0 } });
     if (!res.ok) return null;
-    const data = (await res.json()) as Array<{ sha?: string }>;
-    const sha = Array.isArray(data) && data[0]?.sha ? data[0].sha : null;
-    return sha ?? null;
+    const data = (await res.json()) as Array<{ sha?: string; commit?: { message?: string } }>;
+    const first = Array.isArray(data) && data[0] ? data[0] : null;
+    if (!first?.sha) return null;
+    const message = first.commit?.message?.trim().split("\n")[0] ?? "";
+    return { sha: first.sha, message };
   } catch {
     return null;
   }

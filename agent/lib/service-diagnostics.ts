@@ -8,6 +8,7 @@ import { runCommand, formatOutput } from "./run-command";
 
 const NETWORK = process.env.TRAEFIK_NETWORK ?? "web";
 const TRAEFIK_SERVICE = "traefik_traefik"; // stack "traefik", service "traefik"
+const TRAEFIK_HTTP_PORT = parseInt(process.env.TRAEFIK_HTTP_PORT ?? "80", 10) || 80;
 const CURL_IMAGE = "curlimages/curl:latest";
 
 export type DiagnosticVerdict =
@@ -45,14 +46,23 @@ function run(cmd: string): { success: boolean; out: string } {
   return { success: r.success, out };
 }
 
-/** Fetch HTTP status from host:port. Tries host then fallbackHost (e.g. host.docker.internal for WSL). */
+/** Fetch HTTP status from host:port (optional Host header for Traefik routing). */
 function fetchStatusFromHost(
   port: number,
   timeoutMs: number = 10000,
-  host: string = "127.0.0.1"
+  host: string = "127.0.0.1",
+  hostHeader?: string
 ): Promise<{ statusCode: number } | { error: string }> {
   return new Promise((resolve) => {
-    const req = http.get(`http://${host}:${port}/`, { timeout: timeoutMs }, (res) => {
+    const opts: http.RequestOptions = {
+      hostname: host,
+      port,
+      path: "/",
+      method: "GET",
+      timeout: timeoutMs,
+    };
+    if (hostHeader) opts.headers = { Host: hostHeader };
+    const req = http.get(opts, (res) => {
       resolve({ statusCode: res.statusCode ?? 0 });
       res.destroy();
     });
@@ -62,6 +72,14 @@ function fetchStatusFromHost(
       resolve({ error: "timeout" });
     });
   });
+}
+
+/** Probe app via Traefik: GET http://localhost:80 with Host: expectedHost (e.g. test.localhost). */
+function fetchViaTraefik(
+  expectedHost: string,
+  timeoutMs: number = 10000
+): Promise<{ statusCode: number } | { error: string }> {
+  return fetchStatusFromHost(TRAEFIK_HTTP_PORT, timeoutMs, "127.0.0.1", expectedHost);
 }
 
 /** Get published port for the service (from Swarm inspect). Returns 0 if none. */
@@ -123,27 +141,24 @@ export async function runServiceDiagnostics(
   const inspectFull = run(`docker service inspect ${serviceName} 2>&1`);
   result.serviceInspectSnippet = inspectFull.out.slice(0, 2000) || "(no inspect)";
 
-  // 2. Verify container is serving: try published port first (works when agent and Docker on same host/WSL), then in-network curl
-  const publishedPort = getPublishedPort(serviceName);
+  // 2. Verify app is reachable: probe via Traefik (curl -H "Host: <domain>" http://localhost:80)
+  //    This works without attaching to the overlay network and matches how users access the app.
   let code: number | null = null;
   let probeNote: string | null = null;
 
-  if (publishedPort > 0) {
-    let probe = await fetchStatusFromHost(publishedPort, 10000, "127.0.0.1");
-    if ("error" in probe) {
-      probe = await fetchStatusFromHost(publishedPort, 10000, "host.docker.internal");
-      if ("statusCode" in probe) probeNote = "Reached via host.docker.internal (127.0.0.1 failed). ";
-    }
-    if ("statusCode" in probe && probe.statusCode > 0) {
-      code = probe.statusCode;
-      result.containerReachable = true;
-      result.containerHttpStatus = code;
-      result.containerCurlError = probeNote
-        ? probeNote + "Published port " + publishedPort + "."
-        : null;
-    }
+  let traefikProbe = await fetchViaTraefik(expectedHost, 10000);
+  if ("error" in traefikProbe) {
+    traefikProbe = await fetchStatusFromHost(TRAEFIK_HTTP_PORT, 10000, "host.docker.internal", expectedHost);
+    if ("statusCode" in traefikProbe) probeNote = "Reached via host.docker.internal (127.0.0.1 failed). ";
+  }
+  if ("statusCode" in traefikProbe && traefikProbe.statusCode > 0) {
+    code = traefikProbe.statusCode;
+    result.containerReachable = true;
+    result.containerHttpStatus = code;
+    result.containerCurlError = null;
   }
 
+  // Fallback: in-network curl (only when overlay is attachable; often fails with "not manually attachable")
   if (code === null) {
     const curlUrl = `http://${serviceName}:${containerPort}/`;
     const curlCmd = `docker run --rm --network ${NETWORK} ${CURL_IMAGE} -s -o /dev/null -w "%{http_code}" --connect-timeout 8 --max-time 15 "${curlUrl}" 2>&1`;
@@ -159,11 +174,12 @@ export async function runServiceDiagnostics(
     } else {
       result.containerReachable = false;
       result.containerHttpStatus = code;
+      const traefikErr = "Traefik probe failed (GET http://localhost:" + TRAEFIK_HTTP_PORT + " with Host: " + expectedHost + "). ";
       result.containerCurlError =
-        (curlOut.slice(0, 400) || "Connection failed or timeout.") +
-        (publishedPort === 0
-          ? " Apps use overlay network only (no published port). In-network curl failed."
-          : " Published port " + publishedPort + " probe also failed.");
+        traefikErr +
+        (curlOut.includes("not manually attachable")
+          ? "In-network curl skipped (overlay network '" + NETWORK + "' is not attachable from this host)."
+          : (curlOut.slice(0, 350) || "In-network curl failed."));
     }
   }
 
@@ -175,26 +191,26 @@ export async function runServiceDiagnostics(
     result.traefikLogs.includes(serviceName) ||
     result.traefikLogs.includes(expectedHost);
 
-  // 4. Verdict and summary
+  // 4. Verdict and summary (expected port = Traefik loadbalancer.server.port, default 80)
   if (!result.containerReachable) {
     result.verdict = "container_not_serving";
     result.summary =
-      "Container is not serving HTTP on the expected port. Check: (1) App listens on 0.0.0.0 (not 127.0.0.1). (2) Port matches Traefik label (e.g. 3000 for Node, 80 for Nginx). (3) Nginx/Node is configured to serve on that port and correct root/proxy.";
+      `Container is not responding on port ${containerPort} (Traefik label port). Check: (1) App listens on 0.0.0.0 (not 127.0.0.1). (2) App listens on the same port as the service config (default 80). (3) Server is bound to that port and correct root/proxy.`;
   } else if (!result.traefikMentionsService && result.traefikLogs.length > 0) {
     result.verdict = "traefik_routing";
     result.summary =
       "Container responds to direct curl, but Traefik may not have discovered the service or Host header may not match. Check Traefik logs above; ensure labels (traefik.enable, Host rule, loadbalancer.server.port) match and Traefik is on the same Swarm network.";
   } else if (result.containerReachable && (result.containerHttpStatus === 200 || result.containerHttpStatus === 304)) {
     result.verdict = "ok";
-    result.summary = "Container is serving and Traefik has seen this service. If you still cannot open the URL in the browser, check DNS/hosts for " + expectedHost + ".";
+    result.summary = `Reached via Traefik (curl -H "Host: ${expectedHost}" http://localhost:${TRAEFIK_HTTP_PORT}). Open http://${expectedHost} in the browser.`;
   } else if (result.containerReachable) {
-    result.verdict = "container_not_serving";
+    result.verdict = "ok";
     result.summary =
-      `Container responds with HTTP ${result.containerHttpStatus}. For Traefik to serve the app, the backend should return 2xx on /. Check app root path or Nginx/Node configuration.`;
+      `Reached via Traefik: HTTP ${result.containerHttpStatus}. Open http://${expectedHost}. For 2xx on /, check app root or server config.`;
   } else {
     result.verdict = "traefik_routing";
     result.summary =
-      "Could not confirm container reachability. Check Traefik logs and ensure the service is on network '" + NETWORK + "' and Traefik labels (Host, port) are correct.";
+      `Could not reach container on port ${containerPort}. Ensure the service is on network '${NETWORK}', Traefik label loadbalancer.server.port=${containerPort}, and the app listens on 0.0.0.0:${containerPort}.`;
   }
 
   return result;

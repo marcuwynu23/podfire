@@ -66,7 +66,7 @@ export default async function AppsPage() {
             Apps
           </h1>
           <p className="mt-1 text-sm text-zinc-400">
-            Deploy and manage applications from GitHub.
+            Connect GitHub repos and deploy to Docker Swarm. Each app gets a <code className="rounded border border-white/[0.06] bg-black/20 px-1">*.localhost</code> URL when the Gateway is running.
           </p>
         </div>
         <Link

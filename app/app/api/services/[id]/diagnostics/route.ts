@@ -25,7 +25,7 @@ export async function GET(
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
   const stackName = service.stackName ?? service.name;
-  const port = service.port ?? 3000;
+  const port = service.port ?? 80;
   try {
     const res = await fetch(
       `${GATEWAY_URL}/service-diagnostics?stackName=${encodeURIComponent(stackName)}&port=${port}`,

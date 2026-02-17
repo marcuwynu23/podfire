@@ -5,7 +5,7 @@ import * as path from "path";
 
 const GATEWAY_URL = process.env.AGENT_GATEWAY_URL ?? "http://localhost:3001";
 
-export async function POST() {
+export async function POST(request: Request) {
   const userId = await getSessionUserId();
   if (!userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -13,11 +13,16 @@ export async function POST() {
 
   let yaml: string;
   try {
-    const stackPath = path.join(process.cwd(), "traefik", "traefik-stack.yml");
-    yaml = fs.readFileSync(stackPath, "utf-8");
+    const body = await request.json().catch(() => ({})) as { yaml?: string };
+    if (typeof body.yaml === "string" && body.yaml.trim()) {
+      yaml = body.yaml.trim();
+    } else {
+      const stackPath = path.join(process.cwd(), "traefik", "traefik-stack.yml");
+      yaml = fs.readFileSync(stackPath, "utf-8");
+    }
   } catch (err) {
     return NextResponse.json(
-      { error: "Traefik stack file not found" },
+      { error: "Traefik stack file not found or invalid request" },
       { status: 500 }
     );
   }

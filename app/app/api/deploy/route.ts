@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSessionUserId, getDecryptedGitHubToken } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { getLatestCommitSha } from "@/lib/github";
+import { getLatestCommitInfo } from "@/lib/github";
 
 const GATEWAY_URL = process.env.AGENT_GATEWAY_URL ?? "http://localhost:3001";
 
@@ -76,10 +76,15 @@ export async function POST(request: Request) {
     token ? `https://x-access-token:${token}@github.com/` : "https://github.com/"
   );
 
-  // Resolve current commit SHA for this branch (for versioning and auto-deploy)
+  // Resolve current commit SHA and message for this branch
   let commitSha: string | null = null;
+  let commitMessage: string | null = null;
   try {
-    commitSha = await getLatestCommitSha(service.repoUrl, service.branch, token);
+    const info = await getLatestCommitInfo(service.repoUrl, service.branch, token);
+    if (info) {
+      commitSha = info.sha;
+      commitMessage = info.message || null;
+    }
   } catch {
     // ignore
   }
@@ -90,6 +95,7 @@ export async function POST(request: Request) {
       status: "building",
       logs: "Dispatched to agent.\n",
       commitSha: commitSha ?? undefined,
+      commitMessage: commitMessage ?? undefined,
     },
   });
 
