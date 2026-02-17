@@ -1,0 +1,40 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                   String   @id @default(cuid())
+  email                String?
+  githubId             String   @unique
+  encryptedAccessToken  String?
+  createdAt            DateTime @default(now())
+  services             Service[]
+}
+
+model Service {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name        String
+  repoUrl     String
+  branch      String   @default("main")
+  framework   String?
+  dockerImage String?
+  stackName   String?
+  createdAt   DateTime @default(now())
+  deployments Deployment[]
+}
+
+model Deployment {
+  id        String   @id @default(cuid())
+  serviceId String
+  service   Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  status    String
+  logs      String?
+  createdAt DateTime @default(now())
+}

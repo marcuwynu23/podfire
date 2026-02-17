@@ -1,0 +1,22 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --gl-bg: #1a1a1c;
+  --gl-sidebar: #1e1e20;
+  --gl-card: #222224;
+  --gl-card-hover: #252528;
+  --gl-edge: rgba(255, 255, 255, 0.06);
+  --primary: #10b981;
+  --primary-hover: #059669;
+}
+
+body {
+  font-family: var(--font-ubuntu), ui-sans-serif, system-ui, sans-serif;
+  width: 100%;
+  box-sizing: border-box;
+  background: var(--gl-bg);
+  color: #e5e5e5;
+  min-height: 100vh;
+}
