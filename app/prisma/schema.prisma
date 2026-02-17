@@ -1,0 +1,66 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                   String   @id @default(cuid())
+  email                String?
+  githubId             String   @unique
+  githubLogin          String?  // GitHub username for display in header
+  encryptedAccessToken String?  // AES-256 encrypted GitHub token
+  createdAt            DateTime @default(now())
+  services             Service[]
+  agents               Agent[]
+}
+
+model Agent {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String   // display name; use AGENT_NAME when running the agent process
+  createdAt DateTime @default(now())
+}
+
+model Service {
+  id                     String   @id @default(cuid())
+  userId                 String
+  user                   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name                   String
+  repoUrl                String
+  branch                 String   @default("main")
+  framework              String?
+  dockerImage            String?
+  stackName              String?
+  port                   Int?     // container port for Traefik (default: 3000 for Node, 80 for nginx/custom)
+  hostPort               Int?     // optional published host port (auto-assigned if null when deploy needs it)
+  entryCommand           String?  // e.g. "npm start" or "node server.js"
+  buildCommand           String?  // e.g. "npm run build"
+  env                    String?  // JSON object of env vars for the container
+  replicas                Int      @default(1) // number of service replicas (Swarm)
+  deployMode             String   @default("manual") // "manual" | "auto" — auto watches branch and deploys on new commits
+  lastDeployedCommitSha  String?  // for auto: last commit we deployed (to detect new commits)
+  createdAt              DateTime @default(now())
+  deployments            Deployment[]
+}
+
+model Deployment {
+  id        String   @id @default(cuid())
+  serviceId String
+  service   Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  status    String   // queued | building | pushing | deploying | running | failed
+  logs      String?
+  commitSha String?  // commit SHA that was deployed (for versioning and auto-deploy compare)
+  createdAt DateTime @default(now())
+}
+
+model Setting {
+  id        String   @id @default(cuid())
+  key       String   @unique // e.g. cloudflare_api_token, github_client_id
+  value    String   // encrypted for secrets; plain for non-secrets like docker_registry URL
+  updatedAt DateTime @updatedAt
+}
