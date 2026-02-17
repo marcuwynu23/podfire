@@ -31,15 +31,50 @@ const SERVICE_SCALE_TIMEOUT_MS = 60000;
 const prisma = new PrismaClient();
 const port = parseInt(process.env.AGENT_GATEWAY_PORT || "3001", 10);
 
-async function appendDeploymentLog(deploymentId, line) {
-  const d = await prisma.deployment.findUnique({
-    where: { id: deploymentId },
-    select: { logs: true },
-  });
-  await prisma.deployment.update({
-    where: { id: deploymentId },
-    data: { logs: (d?.logs ?? "") + line + "\n" },
-  });
+// Batch deployment log writes to avoid SQLite lock timeouts (app and gateway share the same DB)
+const LOG_FLUSH_MS = 400;
+const LOG_FLUSH_THRESHOLD = 15;
+const logBuffers = new Map(); // deploymentId -> { lines: string[], timeoutId: ReturnType<setTimeout> }
+
+function flushDeploymentLog(deploymentId) {
+  const buf = logBuffers.get(deploymentId);
+  if (!buf || buf.lines.length === 0) return Promise.resolve();
+  const lines = buf.lines.splice(0, buf.lines.length);
+  if (buf.timeoutId) {
+    clearTimeout(buf.timeoutId);
+    buf.timeoutId = null;
+  }
+  const append = lines.map((l) => l + "\n").join("");
+  return prisma.deployment
+    .findUnique({ where: { id: deploymentId }, select: { logs: true } })
+    .then((d) =>
+      prisma.deployment.update({
+        where: { id: deploymentId },
+        data: { logs: (d?.logs ?? "") + append },
+      })
+    )
+    .catch((err) => {
+      console.error("[gateway] appendDeploymentLog flush error:", err?.message ?? err);
+    });
+}
+
+function appendDeploymentLog(deploymentId, line) {
+  let buf = logBuffers.get(deploymentId);
+  if (!buf) {
+    buf = { lines: [], timeoutId: null };
+    logBuffers.set(deploymentId, buf);
+  }
+  buf.lines.push(line);
+  if (buf.lines.length >= LOG_FLUSH_THRESHOLD) {
+    return flushDeploymentLog(deploymentId);
+  }
+  if (!buf.timeoutId) {
+    buf.timeoutId = setTimeout(() => {
+      buf.timeoutId = null;
+      flushDeploymentLog(deploymentId);
+    }, LOG_FLUSH_MS);
+  }
+  return Promise.resolve();
 }
 
 async function setDeploymentStatus(deploymentId, status) {
@@ -360,8 +395,9 @@ wss.on("connection", (ws) => {
         ws.send(JSON.stringify({ type: "registered", agentId }));
         console.log("[gateway] Agent registered:", agentId, msg.name ?? "");
       } else if (msg.type === "log" && msg.deploymentId && msg.line != null) {
-        await appendDeploymentLog(msg.deploymentId, msg.line);
+        appendDeploymentLog(msg.deploymentId, msg.line);
       } else if (msg.type === "status" && msg.deploymentId && msg.status) {
+        await flushDeploymentLog(msg.deploymentId);
         await setDeploymentStatus(msg.deploymentId, msg.status);
       } else if (msg.type === "traefik-status" && msg.requestId != null) {
         const pending = traefikStatusPending.get(msg.requestId);
