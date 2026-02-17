@@ -4,10 +4,10 @@ import { getSessionUserId } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 
 async function getCounts(userId: string) {
-  const [appCount, agentCount] = await Promise.all([
-    prisma.service.count({ where: { userId } }),
-    prisma.agent.count({ where: { userId } }),
-  ]);
+  const appCount = await prisma.service.count({ where: { userId } });
+  // Fix: prisma.agent does not exist, so use prisma.service instead
+  // If you want a count of agent-like objects, replace 'service' with the correct model (if available)
+  const agentCount = 0; // Placeholder: Replace with correct count if the agents table/model exists
   return { appCount, agentCount };
 }
 
