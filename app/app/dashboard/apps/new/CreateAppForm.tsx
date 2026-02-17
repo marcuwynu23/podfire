@@ -30,7 +30,6 @@ export function CreateAppForm({ cancelHref = "/dashboard", contained = false }: 
   const [entryCommand, setEntryCommand] = useState("");
   const [buildCommand, setBuildCommand] = useState("");
   const [envEntries, setEnvEntries] = useState<EnvEntry[]>([{ key: "", value: "" }]);
-  const [deployMode, setDeployMode] = useState<"manual" | "auto">("manual");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -121,7 +120,7 @@ export function CreateAppForm({ cancelHref = "/dashboard", contained = false }: 
           entryCommand: entryCommand.trim() || undefined,
           buildCommand: buildCommand.trim() || undefined,
           env: buildEnvObject() ?? undefined,
-          deployMode,
+          deployMode: "manual",
         }),
       });
       const data = await res.json();
@@ -229,25 +228,6 @@ export function CreateAppForm({ cancelHref = "/dashboard", contained = false }: 
             </option>
           ))}
         </select>
-      </div>
-
-      <div>
-        <label className="mb-1 block text-sm font-medium text-zinc-300">
-          Deploy mode
-        </label>
-        <select
-          value={deployMode}
-          onChange={(e) => setDeployMode(e.target.value as "manual" | "auto")}
-          className="w-full rounded-lg border border-white/[0.06] bg-black/20 px-3 py-2 text-white focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
-        >
-          <option value="manual">Manual — deploy only when you click Deploy</option>
-          <option value="auto">Auto — watch this branch and deploy when there are new commits</option>
-        </select>
-        <p className="mt-1 text-xs text-zinc-500">
-          {deployMode === "auto"
-            ? "We check the branch periodically; new commits trigger a deploy. Set CRON_SECRET and call GET /api/cron/auto-deploy periodically (e.g. every 5 min)."
-            : "You trigger each deployment from the app page."}
-        </p>
       </div>
 
       <div>

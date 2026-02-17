@@ -12,7 +12,10 @@ export default async function AgentsPage() {
       <Link href="/dashboard" className="text-sm text-zinc-500 hover:text-white">
         ← Dashboard
       </Link>
-      <h1 className="mt-2 mb-6 text-2xl font-semibold text-white">Agents</h1>
+      <h1 className="mt-2 text-2xl font-semibold text-white">Agents</h1>
+      <p className="mt-1 mb-6 text-sm text-zinc-400">
+        Connect one or more agents to run deploys and manage the Gateway. Each agent runs in a separate process and connects to the app via WebSocket.
+      </p>
       <AgentsSection />
     </div>
   );

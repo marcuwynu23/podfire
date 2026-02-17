@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 import type { Deployment, Service } from "@prisma/client";
 import { useRouter } from "next/navigation";
 import { DeployButton } from "./DeployButton";
+import { CheckForUpdatesButton } from "./CheckForUpdatesButton";
 import { LogsViewer } from "./LogsViewer";
 import { AppLogsViewer } from "./AppLogsViewer";
 import { DeleteAppButton } from "./DeleteAppButton";
@@ -13,6 +14,7 @@ const tabs = [
   { id: "info", label: "Information", icon: "M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" },
   { id: "deployments", label: "Deployments", icon: "M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" },
   { id: "logs", label: "Logs", icon: "M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" },
+  { id: "diagnostics", label: "Diagnostics", icon: "M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" },
   { id: "settings", label: "Settings", icon: "M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z M15 12a3 3 0 11-6 0 3 3 0 016 0z" },
 ] as const;
 
@@ -79,7 +81,12 @@ export function AppDetailTabs({
             </p>
           </div>
           <div className="flex flex-col items-end gap-2">
-            <DeployButton serviceId={service.id} currentStatus={status} />
+            <div className="flex flex-wrap items-center justify-end gap-2">
+              <DeployButton serviceId={service.id} currentStatus={status} />
+              {(service as { deployMode?: string }).deployMode === "auto" && (
+                <CheckForUpdatesButton serviceId={service.id} onTriggered={() => router.refresh()} />
+              )}
+            </div>
             <span className="text-xs text-zinc-500">
               Deploy is run by the agent (queued then processed)
             </span>
@@ -171,28 +178,16 @@ export function AppDetailTabs({
               </div>
             </dl>
 
-            <ContainerPortBlock
-              serviceId={service.id}
-              currentPort={service.port ?? undefined}
-              onSaved={() => router.refresh()}
-            />
+            {status === "running" && <AppUrlPreview appUrl={appUrl} />}
+          </div>
+        )}
 
-            <DeployModeBlock
-              serviceId={service.id}
-              deployMode={(service as { deployMode?: string }).deployMode ?? "manual"}
-              onSaved={() => router.refresh()}
-            />
-
-            {deployments.length > 0 && <AppUrlPreview appUrl={appUrl} />}
-
-            <p className="mt-6 rounded-native-sm border border-white/[0.06] bg-black/20 px-4 py-3 text-xs text-zinc-400">
-              Gateway must be running on the same Swarm and{" "}
-              <code className="rounded border border-white/[0.06] bg-black/30 px-1.5 py-0.5 font-mono text-zinc-300">
-                web
-              </code>{" "}
-              network for <code className="rounded border border-white/[0.06] bg-black/30 px-1.5 py-0.5 font-mono text-zinc-300">*.localhost</code> routing.
+        {activeTab === "diagnostics" && (
+          <div className="p-6">
+            <h2 className="text-base font-semibold text-white">Diagnostics</h2>
+            <p className="mt-0.5 text-sm text-zinc-400">
+              Check container reachability and Traefik routing. Run after deploy to verify the app is reachable.
             </p>
-
             <ServiceDiagnosticsBlock serviceId={service.id} />
           </div>
         )}
@@ -211,84 +206,15 @@ export function AppDetailTabs({
         )}
 
         {activeTab === "settings" && (
-          <SettingsPanel serviceId={service.id} appName={service.name} onSaved={() => router.refresh()} />
+          <SettingsPanel
+            serviceId={service.id}
+            appName={service.name}
+            deployMode={(service as { deployMode?: string }).deployMode ?? "manual"}
+            onSaved={() => router.refresh()}
+          />
         )}
       </div>
     </div>
-  );
-}
-
-function ContainerPortBlock({
-  serviceId,
-  currentPort,
-  onSaved,
-}: {
-  serviceId: string;
-  currentPort: number | undefined;
-  onSaved: () => void;
-}) {
-  const defaultPort = 3000;
-  const [port, setPort] = useState(String(currentPort ?? defaultPort));
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    setPort(String(currentPort ?? defaultPort));
-  }, [currentPort]);
-
-  async function save() {
-    const num = parseInt(port, 10);
-    if (num < 1 || num > 65535) {
-      setError("Port must be 1–65535");
-      return;
-    }
-    setError(null);
-    setSaving(true);
-    try {
-      const res = await fetch(`/api/services/${serviceId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ port: num }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        setError((data as { error?: string }).error ?? "Failed to save");
-        return;
-      }
-      onSaved();
-    } catch {
-      setError("Request failed");
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  return (
-    <section className="mt-6 rounded-native border border-white/[0.06] bg-black/10 p-4">
-      <h3 className="text-sm font-medium text-white">Container port</h3>
-      <p className="mt-0.5 text-xs text-zinc-500">
-        Port your app listens on inside the container. Use <strong>80</strong> for Nginx, <strong>3000</strong> for Node/Vite dev server. Traefik will use this to reach your app.
-      </p>
-      <div className="mt-3 flex flex-wrap items-center gap-2">
-        <input
-          type="number"
-          min={1}
-          max={65535}
-          value={port}
-          onChange={(e) => { setPort(e.target.value); setError(null); }}
-          className="w-24 rounded-native-sm border border-white/[0.06] bg-black/20 px-3 py-2 text-sm text-white focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
-        />
-        <button
-          type="button"
-          onClick={save}
-          disabled={saving}
-          className="rounded-xl bg-primary px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-primary-hover disabled:opacity-50"
-        >
-          {saving ? "Saving…" : "Save"}
-        </button>
-      </div>
-      {error && <p className="mt-2 text-sm text-amber-400">{error}</p>}
-    </section>
   );
 }
 
@@ -770,6 +696,11 @@ function DeploymentsTab({
                       {(d as { commitSha: string }).commitSha.slice(0, 7)}
                     </span>
                   )}
+                  {(d as { commitMessage?: string | null }).commitMessage && (
+                    <span className="max-w-[200px] truncate text-xs text-zinc-500" title={(d as { commitMessage: string }).commitMessage}>
+                      {(d as { commitMessage: string }).commitMessage}
+                    </span>
+                  )}
                 </div>
                 <div className="flex items-center gap-2">
                   {index === 0 ? (
@@ -798,18 +729,26 @@ function DeploymentsTab({
 function SettingsPanel({
   serviceId,
   appName,
+  deployMode,
   onSaved,
 }: {
   serviceId: string;
   appName: string;
+  deployMode: string;
   onSaved: () => void;
 }) {
   return (
     <div className="p-6">
       <h2 className="text-base font-semibold text-white">Settings</h2>
       <p className="mt-0.5 text-sm text-zinc-400">
-        Danger zone.
+        Deploy mode and danger zone.
       </p>
+
+      <DeployModeBlock
+        serviceId={serviceId}
+        deployMode={deployMode}
+        onSaved={onSaved}
+      />
 
       <section className="mt-6 rounded-native border border-red-500/20 bg-red-500/5">
         <div className="border-b border-red-500/20 px-4 py-3">

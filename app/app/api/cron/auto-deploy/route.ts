@@ -1,41 +1,54 @@
 import { NextResponse } from "next/server";
 import { getDecryptedGitHubToken } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { getLatestCommitSha } from "@/lib/github";
+import { getLatestCommitInfo } from "@/lib/github";
 
 const GATEWAY_URL = process.env.AGENT_GATEWAY_URL ?? "http://localhost:3001";
-const CRON_SECRET = process.env.CRON_SECRET ?? process.env.AUTO_DEPLOY_CRON_SECRET;
+const CRON_SECRET = process.env.CRON_SECRET ?? process.env.AUTO_DEPLOY_CRON_SECRET ?? "";
 
 /**
  * Cron endpoint: check apps with deployMode=auto and trigger deploy when branch has new commits.
- * Call periodically (e.g. every 5 min) with Authorization: Bearer <CRON_SECRET> or ?secret=<CRON_SECRET>.
+ * Call periodically (e.g. every 5 min). If CRON_SECRET or AUTO_DEPLOY_CRON_SECRET is set, pass it via Authorization: Bearer <secret> or ?secret=<secret>.
+ * If neither is set, the endpoint allows unauthenticated access (for dev or in-app polling).
  */
 export async function GET(request: Request) {
-  const authHeader = request.headers.get("authorization");
-  const tokenFromHeader = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : null;
-  const u = new URL(request.url || "/", "http://localhost");
-  const tokenFromQuery = u.searchParams.get("secret");
-  const secret = tokenFromHeader ?? tokenFromQuery;
-  if (!CRON_SECRET || secret !== CRON_SECRET) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (CRON_SECRET) {
+    const authHeader = request.headers.get("authorization");
+    const tokenFromHeader = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : null;
+    const u = new URL(request.url || "/", "http://localhost");
+    const tokenFromQuery = u.searchParams.get("secret");
+    const secret = tokenFromHeader ?? tokenFromQuery;
+    if (secret !== CRON_SECRET) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
   }
 
   const autoServices = await prisma.service.findMany({
     where: { deployMode: "auto" },
     orderBy: { createdAt: "asc" },
+    include: {
+      deployments: { orderBy: { createdAt: "desc" }, take: 1, select: { status: true } },
+    },
   });
   const triggered: string[] = [];
   const skipped: string[] = [];
+  const inProgressStatuses = ["queued", "building", "pushing", "deploying"];
 
   for (const service of autoServices) {
     const token = await getDecryptedGitHubToken(service.userId);
-    const latestSha = await getLatestCommitSha(service.repoUrl, service.branch, token);
-    if (!latestSha) {
+    const commitInfo = await getLatestCommitInfo(service.repoUrl, service.branch, token);
+    if (!commitInfo) {
       skipped.push(service.name + " (could not get commit)");
       continue;
     }
+    const { sha: latestSha, message: commitMessage } = commitInfo;
     if (service.lastDeployedCommitSha === latestSha) {
       skipped.push(service.name + " (no new commits)");
+      continue;
+    }
+    const latestDeployment = service.deployments[0];
+    if (latestDeployment && inProgressStatuses.includes(latestDeployment.status)) {
+      skipped.push(service.name + " (deploy already in progress)");
       continue;
     }
 
@@ -61,7 +74,7 @@ export async function GET(request: Request) {
       "https://github.com/",
       token ? `https://x-access-token:${token}@github.com/` : "https://github.com/"
     );
-    const port = svc.port ?? (svc.framework === "custom" ? 80 : 3000);
+    const port = svc.port ?? 80;
     let env: Record<string, string> | undefined;
     try {
       env = svc.env ? (JSON.parse(svc.env) as Record<string, string>) : undefined;
@@ -75,6 +88,7 @@ export async function GET(request: Request) {
         status: "building",
         logs: "[auto-deploy] New commit detected, dispatching to agent.\n",
         commitSha: latestSha,
+        commitMessage: commitMessage || undefined,
       },
     });
 
