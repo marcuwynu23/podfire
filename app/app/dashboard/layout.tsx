@@ -11,7 +11,7 @@ export default async function DashboardLayout({
 }) {
   const user = await getSessionUser();
   if (!user) redirect("/");
-  const accountLabel = user.githubLogin ?? user.email ?? user.githubId ?? "Account";
+  const accountLabel = user.email ?? user.githubId ?? "Account";
 
   return (
     <div className="flex min-h-screen w-full flex-col">
