@@ -1,21 +1,21 @@
 <div align="center">
-  <h1> Dockly </h1>
+  <h1> PodFire </h1>
 </div>
 
 <p align="center">
-  <img src="https://img.shields.io/github/stars/marcuwynu23/dockly.svg" alt="Stars Badge"/>
-  <img src="https://img.shields.io/github/forks/marcuwynu23/dockly.svg" alt="Forks Badge"/>
-  <img src="https://img.shields.io/github/issues/marcuwynu23/dockly.svg" alt="Issues Badge"/>
-  <img src="https://img.shields.io/github/license/marcuwynu23/dockly.svg" alt="License Badge"/>
+  <img src="https://img.shields.io/github/stars/marcuwynu23/podfire.svg" alt="Stars Badge"/>
+  <img src="https://img.shields.io/github/forks/marcuwynu23/podfire.svg" alt="Forks Badge"/>
+  <img src="https://img.shields.io/github/issues/marcuwynu23/podfire.svg" alt="Issues Badge"/>
+  <img src="https://img.shields.io/github/license/marcuwynu23/podfire.svg" alt="License Badge"/>
 </p>
 
-**Dockly** is an internal Platform-as-a-Service (PaaS) that lets you connect GitHub, define services from your repos, and deploy them as Docker stacks on Docker Swarm—with a web dashboard, deploy agents, and Traefik as the reverse proxy.
+**PodFire** is an internal Platform-as-a-Service (PaaS) that lets you connect GitHub, define services from your repos, and deploy them as Docker stacks on Docker Swarm—with a web dashboard, deploy agents, and Traefik as the reverse proxy.
 
 Think of it as a self-hosted, Render-like experience: you link a repo and branch, and Dockly builds a Docker image, pushes it (optionally to a private registry), and deploys it as a Swarm stack. Traefik routes `*.localhost` (or your domain) to your apps automatically.
 
 ---
 
-## What is Dockly?
+## What is PodFire?
 
 - **Web app (Next.js)** — Dashboard to sign in with GitHub, create and manage services, trigger deploys, view logs and deployment history, manage the Traefik gateway, and see registered agents.
 - **Agent gateway** — Standalone HTTP/WebSocket server that bridges the app and one or more **deploy agents**. The app sends deploy jobs to the gateway; the gateway dispatches them to connected agents.
