@@ -419,7 +419,7 @@ const server = http.createServer(async (req, res) => {
           const payload = JSON.parse(body || "{}");
           const agentId = typeof payload.agentId === "string" ? payload.agentId.trim() : "";
           if (!agentId) {
-            send(400, { error: "agentId required" });
+            send(200, { ok: true });
             return;
           }
           const conn = getAgent(agentId);
