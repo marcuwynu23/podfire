@@ -11,8 +11,8 @@ const config: Config = {
         sans: ["var(--font-ubuntu)", "ui-sans-serif", "system-ui", "sans-serif"],
       },
       colors: {
-        primary: "#10b981",
-        "primary-hover": "#059669",
+        primary: "#107bb9",
+        "primary-hover": "#056196",
         "gl-bg": "#1a1a1c",
         "gl-sidebar": "#1e1e20",
         "gl-card": "#222224",
