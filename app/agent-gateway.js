@@ -10,6 +10,7 @@ const { PrismaClient } = require("@prisma/client");
 const {
   registerAgent,
   unregisterAgent,
+  getAgent,
   listAgents,
   dispatchJob,
   getFirstAgent,
@@ -404,6 +405,40 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  if (req.method === "POST" && pathname === "/agent/disconnect") {
+    let body = "";
+    req.on("data", (chunk) => { body += chunk; });
+    req.on("end", async () => {
+      res.setHeader("Content-Type", "application/json");
+      try {
+        const payload = JSON.parse(body || "{}");
+        const agentId = typeof payload.agentId === "string" ? payload.agentId.trim() : "";
+        if (!agentId) {
+          res.statusCode = 400;
+          res.end(JSON.stringify({ error: "agentId required" }));
+          return;
+        }
+        const conn = getAgent(agentId);
+        if (!conn) {
+          res.statusCode = 404;
+          res.end(JSON.stringify({ error: "Agent not connected" }));
+          return;
+        }
+        if (conn.keyId) {
+          await prisma.agentRegistrationKey.delete({ where: { id: conn.keyId } }).catch(() => null);
+        }
+        try { conn.ws.close(); } catch (_) {}
+        unregisterAgent(agentId);
+        res.statusCode = 200;
+        res.end(JSON.stringify({ ok: true }));
+      } catch (err) {
+        res.statusCode = 400;
+        res.end(JSON.stringify({ error: String(err?.message || err) }));
+      }
+    });
+    return;
+  }
+
   res.statusCode = 404;
   res.end("Not found");
 });
@@ -434,7 +469,7 @@ wss.on("connection", (ws) => {
           return;
         }
         const displayName = (key.name && key.name.trim()) ? key.name.trim() : (msg.name || "Agent");
-        agentId = registerAgent(ws, displayName);
+        agentId = registerAgent(ws, displayName, key.id);
         ws.send(JSON.stringify({ type: "registered", agentId }));
         console.log("[gateway] Agent registered:", agentId, displayName);
       } else if (msg.type === "log" && msg.deploymentId && msg.line != null) {

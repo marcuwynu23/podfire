@@ -13,6 +13,7 @@ export function AgentsSection() {
   const [addLoading, setAddLoading] = useState(false);
   const [addError, setAddError] = useState("");
   const [addSuccess, setAddSuccess] = useState(false);
+  const [removingId, setRemovingId] = useState<string | null>(null);
 
   const fetchConnected = useCallback(async () => {
     try {
@@ -72,6 +73,25 @@ export function AgentsSection() {
     }
   }
 
+  async function handleRemove(agentId: string) {
+    setRemovingId(agentId);
+    try {
+      const res = await fetch("/api/agents/disconnect", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ agentId }),
+        credentials: "same-origin",
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Failed to remove agent");
+      await fetchConnected();
+    } catch (_) {
+      // Optionally set error state; for now just re-enable button
+    } finally {
+      setRemovingId(null);
+    }
+  }
+
   return (
     <div className="mb-8 rounded-native border border-white/[0.06] bg-gl-card p-6 shadow-sm">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-4">
@@ -99,22 +119,43 @@ export function AgentsSection() {
           No agents connected. Run the agent, copy the key it prints, then use Add Agent to confirm the key.
         </p>
       ) : (
-        <ul className="space-y-3">
-          {connected.map((a) => (
-            <li
-              key={a.id}
-              className="flex items-center justify-between gap-2 rounded-native-sm border border-white/[0.06] bg-black/20 px-4 py-3"
-            >
-              <div className="flex items-center gap-3">
-                <span className="font-medium text-white">{a.name}</span>
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/15 px-2.5 py-0.5 text-xs font-medium text-primary">
-                  <span className="h-1.5 w-1.5 rounded-full bg-primary" />
-                  Connected
-                </span>
-              </div>
-            </li>
-          ))}
-        </ul>
+        <div className="overflow-x-auto rounded-native-sm border border-white/[0.06]">
+          <table className="w-full min-w-[320px] border-collapse">
+            <thead>
+              <tr className="border-b border-white/[0.06] bg-black/20">
+                <th className="px-4 py-3 text-left text-sm font-medium text-zinc-400">Name</th>
+                <th className="px-4 py-3 text-left text-sm font-medium text-zinc-400">Status</th>
+                <th className="px-4 py-3 text-right text-sm font-medium text-zinc-400">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {connected.map((a) => (
+                <tr
+                  key={a.id}
+                  className="border-b border-white/[0.06] last:border-b-0 hover:bg-white/[0.03]"
+                >
+                  <td className="px-4 py-3 font-medium text-white">{a.name}</td>
+                  <td className="px-4 py-3">
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/15 px-2.5 py-0.5 text-xs font-medium text-primary">
+                      <span className="h-1.5 w-1.5 rounded-full bg-primary" />
+                      Connected
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-right">
+                    <button
+                      type="button"
+                      onClick={() => handleRemove(a.id)}
+                      disabled={removingId === a.id}
+                      className="rounded-native-sm border border-red-500/30 px-3 py-1.5 text-xs font-medium text-red-400 hover:bg-red-500/10 disabled:opacity-50"
+                    >
+                      {removingId === a.id ? "Removing…" : "Remove"}
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
 
       {addModalOpen && (

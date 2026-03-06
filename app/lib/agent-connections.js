@@ -8,15 +8,22 @@ function generateId() {
   return "agent-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 9);
 }
 
-function registerAgent(ws, name = "Agent") {
+function registerAgent(ws, name = "Agent", keyId = null) {
   const agentId = generateId();
   agents.set(agentId, {
     id: agentId,
     ws,
     name: String(name),
     connectedAt: new Date().toISOString(),
+    keyId: keyId || null,
   });
   return agentId;
+}
+
+function getAgent(agentId) {
+  const conn = agents.get(agentId);
+  if (!conn || conn.ws.readyState !== 1) return null;
+  return conn;
 }
 
 function unregisterAgent(agentId) {
@@ -58,6 +65,7 @@ module.exports = {
   agents,
   registerAgent,
   unregisterAgent,
+  getAgent,
   listAgents,
   dispatchJob,
   getFirstAgent,
