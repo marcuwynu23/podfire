@@ -1,9 +1,8 @@
 import { NextResponse } from "next/server";
 import { getSessionUserId } from "@/lib/auth";
+import { gatewayFetch } from "@/lib/gateway-auth";
 
 export const dynamic = "force-dynamic";
-
-const GATEWAY_URL = process.env.AGENT_GATEWAY_URL ?? "http://localhost:3001";
 
 export async function GET() {
   const userId = await getSessionUserId();
@@ -11,7 +10,7 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   try {
-    const res = await fetch(`${GATEWAY_URL}/agents`, { cache: "no-store" });
+    const res = await gatewayFetch("/agents", { cache: "no-store" });
     if (!res.ok) {
       return NextResponse.json({ connected: 0, agents: [] });
     }

@@ -20,6 +20,7 @@ dist/
 # Environment & secrets
 .env
 .env.local
+agent/.agent-key
 .env.development.local
 .env.test.local
 .env.production.local

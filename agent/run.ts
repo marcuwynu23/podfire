@@ -1,4 +1,5 @@
 import "dotenv/config";
+import * as crypto from "crypto";
 import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
@@ -181,22 +182,58 @@ function runDeployFromJob(
   })();
 }
 
+const AGENT_KEY_FILE = path.join(process.cwd(), ".agent-key");
+
+function getOrCreateAgentSecret(): { secret: string; isNew: boolean } {
+  try {
+    if (fs.existsSync(AGENT_KEY_FILE)) {
+      const existing = fs.readFileSync(AGENT_KEY_FILE, "utf-8").trim();
+      if (existing.length >= 16) return { secret: existing, isNew: false };
+    }
+  } catch {
+    // ignore read errors, generate new
+  }
+  const secret = crypto.randomBytes(32).toString("hex");
+  try {
+    fs.writeFileSync(AGENT_KEY_FILE, secret, "utf-8");
+    fs.chmodSync(AGENT_KEY_FILE, 0o600);
+  } catch (err) {
+    console.error("[dockly-agent] Could not write .agent-key:", (err as Error).message);
+  }
+  return { secret, isNew: true };
+}
+
 function connect(): WebSocket {
-  // Connect to the agent gateway (default port 3001), not the main app
+  const { secret, isNew: isNewKey } = getOrCreateAgentSecret();
+
   const gatewayUrl = process.env.AGENT_GATEWAY_URL ?? "http://localhost:3001";
   const wsUrl = gatewayUrl.replace(/^http/, "ws") + "/ws/agent";
   const name = process.env.AGENT_NAME ?? "dockly-agent";
+
+  if (isNewKey) {
+    console.log("[dockly-agent] Generated agent key. You must confirm it before connecting.");
+    console.log("[dockly-agent] Key:", secret);
+    console.log("[dockly-agent] Add this key in the app (Dashboard → Agents → Add Agent), then run the agent again: npm run dev");
+    process.exit(0);
+  }
+
   console.log("[dockly-agent] Connecting to", wsUrl, "as", name);
 
   const ws = new WebSocket(wsUrl);
 
   ws.on("open", () => {
-    ws.send(JSON.stringify({ type: "register", name }));
+    ws.send(JSON.stringify({ type: "register", secret, name }));
   });
 
   ws.on("message", async (data: Buffer) => {
     try {
       const msg = JSON.parse(data.toString()) as Record<string, unknown>;
+      if (msg.type === "register-failed") {
+        const err = typeof msg.error === "string" ? msg.error : "Registration rejected";
+        console.error("[dockly-agent]", err);
+        ws.close();
+        return;
+      }
       if (msg.type === "registered") {
         console.log("[dockly-agent] Registered with id:", msg.agentId);
       } else if (msg.type === "deploy") {

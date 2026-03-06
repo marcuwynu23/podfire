@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSessionUserId } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-
-const GATEWAY_URL = process.env.AGENT_GATEWAY_URL ?? "http://localhost:3001";
+import { gatewayFetch } from "@/lib/gateway-auth";
 const GATEWAY_SCALE_TIMEOUT_MS = 65000;
 
 /**
@@ -41,7 +40,7 @@ export async function POST(
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), GATEWAY_SCALE_TIMEOUT_MS);
-    const res = await fetch(`${GATEWAY_URL}/service-scale`, {
+    const res = await gatewayFetch("/service-scale", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ stackName, replicas }),

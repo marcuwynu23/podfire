@@ -2,8 +2,7 @@ import { NextResponse } from "next/server";
 import { getSessionUserId, getDecryptedGitHubToken } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { getLatestCommitInfo } from "@/lib/github";
-
-const GATEWAY_URL = process.env.AGENT_GATEWAY_URL ?? "http://localhost:3001";
+import { gatewayFetch } from "@/lib/gateway-auth";
 
 /**
  * Check for new commits on the app branch and trigger deploy if deployMode is auto and there is a new commit.
@@ -62,7 +61,7 @@ export async function POST(
   let svc = service;
   if (svc.hostPort == null) {
     try {
-      const portRes = await fetch(`${GATEWAY_URL}/agent/available-port`, { cache: "no-store" });
+      const portRes = await gatewayFetch("/agent/available-port", { cache: "no-store" });
       const portData = (await portRes.json()) as { port?: number; error?: string };
       if (portData.port != null && portData.port >= 1 && portData.port <= 65535) {
         svc = await prisma.service.update({
@@ -117,7 +116,7 @@ export async function POST(
   };
 
   try {
-    const dispatchRes = await fetch(`${GATEWAY_URL}/dispatch`, {
+    const dispatchRes = await gatewayFetch("/dispatch", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(job),
