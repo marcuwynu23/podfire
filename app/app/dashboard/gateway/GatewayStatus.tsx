@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import {useState, useCallback, useEffect} from "react";
 
 const DASHBOARD_URL = "http://traefik.localhost";
 
@@ -14,8 +14,8 @@ export function GatewayStatus() {
     setStatus("checking");
     setErrorMessage(null);
     try {
-      const res = await fetch("/api/traefik/status", { cache: "no-store" });
-      const data = (await res.json()) as { running?: boolean; error?: string };
+      const res = await fetch("/api/traefik/status", {cache: "no-store"});
+      const data = (await res.json()) as {running?: boolean; error?: string};
       if (data.error && !data.running) {
         setStatus("error");
         setErrorMessage(data.error);
@@ -68,11 +68,15 @@ export function GatewayStatus() {
           </div>
         )}
         {status === "stopped" && (
-          <p className="text-sm text-zinc-400">Gateway is not deployed. Deploy it below to route traffic to your apps.</p>
+          <p className="text-sm text-zinc-400">
+            Gateway is not deployed. Deploy it below to route traffic to your
+            apps.
+          </p>
         )}
         {status === "error" && (
           <p className="text-sm text-amber-400">
-            {errorMessage ?? "Unable to determine status. Ensure an agent is connected."}
+            {errorMessage ??
+              "Unable to determine status. Ensure an agent is connected."}
           </p>
         )}
       </div>

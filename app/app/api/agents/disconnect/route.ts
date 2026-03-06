@@ -24,7 +24,7 @@ export async function POST(request: Request) {
     if (!res.ok) {
       return NextResponse.json(
         { error: data.error ?? "Failed to disconnect agent" },
-        { status: res.status === 404 ? 404 : 400 }
+        { status: res.status === 401 ? 401 : 400 }
       );
     }
     return NextResponse.json({ ok: true });
