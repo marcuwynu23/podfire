@@ -10,11 +10,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   try {
-    const body = await request.json();
+    const body = await request.json().catch(() => ({}));
     const agentId = typeof body?.agentId === "string" ? body.agentId.trim() : "";
-    if (!agentId) {
-      return NextResponse.json({ error: "agentId required" }, { status: 400 });
-    }
     const res = await gatewayFetch("/agent/disconnect", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
