@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSessionUserId } from "@/lib/auth";
-
-const GATEWAY_URL = process.env.AGENT_GATEWAY_URL ?? "http://localhost:3001";
+import { gatewayFetch } from "@/lib/gateway-auth";
 
 export const dynamic = "force-dynamic";
 
@@ -11,7 +10,7 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   try {
-    const res = await fetch(`${GATEWAY_URL}/traefik/status`, { cache: "no-store" });
+    const res = await gatewayFetch("/traefik/status", { cache: "no-store" });
     const text = await res.text();
     let data: { running?: boolean; error?: string } = {};
     try {

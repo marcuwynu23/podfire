@@ -59,10 +59,18 @@ export function AppLogsViewer({
     return () => clearInterval(interval);
   }, [live, serviceId, fetchLogs]);
 
-  // Keep scroll at bottom when we're already at bottom and logs update
+  // Track recent log: scroll to bottom when logs update (after layout). If user scrolled up, keep their position.
   useEffect(() => {
-    if (!preRef.current || !logs || !wasAtBottomRef.current) return;
-    preRef.current.scrollTop = preRef.current.scrollHeight;
+    if (!preRef.current || !logs) return;
+    if (!wasAtBottomRef.current) return;
+    const el = preRef.current;
+    const scrollToBottom = () => {
+      el.scrollTop = el.scrollHeight;
+    };
+    requestAnimationFrame(() => {
+      scrollToBottom();
+      requestAnimationFrame(scrollToBottom);
+    });
   }, [logs]);
 
   const handleScroll = useCallback(() => {

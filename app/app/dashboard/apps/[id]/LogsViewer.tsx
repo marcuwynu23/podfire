@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 
 export function LogsViewer({
   deploymentId,
@@ -14,6 +14,8 @@ export function LogsViewer({
   const [logs, setLogs] = useState(initialLogs ?? "");
   const [status, setStatus] = useState<string | null>(null);
   const [fetchError, setFetchError] = useState<string | null>(null);
+  const preRef = useRef<HTMLPreElement>(null);
+  const wasAtBottomRef = useRef(true);
 
   useEffect(() => {
     let cancelled = false;
@@ -57,12 +59,36 @@ export function LogsViewer({
     };
   }, [deploymentId]);
 
+  // Track recent log: scroll to bottom when logs update so the latest line is visible
+  useEffect(() => {
+    if (!preRef.current || !logs) return;
+    if (!wasAtBottomRef.current) return;
+    const el = preRef.current;
+    const scrollToBottom = () => {
+      el.scrollTop = el.scrollHeight;
+    };
+    requestAnimationFrame(() => {
+      scrollToBottom();
+      requestAnimationFrame(scrollToBottom);
+    });
+  }, [logs]);
+
+  const handleScroll = useCallback(() => {
+    if (!preRef.current) return;
+    const { scrollTop, scrollHeight, clientHeight } = preRef.current;
+    wasAtBottomRef.current = scrollHeight - scrollTop - clientHeight < 40;
+  }, []);
+
   const content = (
     <>
       {fetchError && (
         <p className="mb-3 text-sm text-amber-400">{fetchError}</p>
       )}
-      <pre className="max-h-96 overflow-auto rounded-native-sm border border-white/[0.06] bg-black/20 p-4 font-mono text-sm leading-relaxed text-zinc-300 whitespace-pre-wrap">
+      <pre
+        ref={preRef}
+        onScroll={handleScroll}
+        className="max-h-96 overflow-auto rounded-native-sm border border-white/[0.06] bg-black/20 p-4 font-mono text-sm leading-relaxed text-zinc-300 whitespace-pre-wrap"
+      >
         {logs || "No logs yet."}
       </pre>
     </>
