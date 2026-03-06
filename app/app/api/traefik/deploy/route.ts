@@ -2,8 +2,7 @@ import { NextResponse } from "next/server";
 import { getSessionUserId } from "@/lib/auth";
 import * as fs from "fs";
 import * as path from "path";
-
-const GATEWAY_URL = process.env.AGENT_GATEWAY_URL ?? "http://localhost:3001";
+import { gatewayFetch } from "@/lib/gateway-auth";
 
 export async function POST(request: Request) {
   const userId = await getSessionUserId();
@@ -28,7 +27,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const res = await fetch(`${GATEWAY_URL}/traefik/deploy`, {
+    const res = await gatewayFetch("/traefik/deploy", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ yaml }),

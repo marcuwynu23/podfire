@@ -31,6 +31,29 @@ const SERVICE_SCALE_TIMEOUT_MS = 60000;
 const prisma = new PrismaClient();
 const port = parseInt(process.env.AGENT_GATEWAY_PORT || "3001", 10);
 
+// Registration is only allowed if the key was confirmed in the app (Dashboard → Agents → Add Agent). No auto-connect.
+const agentRegistrationKey = prisma.agentRegistrationKey;
+if (typeof agentRegistrationKey?.findUnique !== "function") {
+  console.error("[gateway] Prisma client missing agentRegistrationKey. Run: npx prisma generate && npx prisma db push. Restart the gateway.");
+  process.exit(1);
+}
+
+// Optional: only for app→gateway HTTP. If set, app must send Authorization: Bearer <this>. If unset, HTTP is allowed (no auth). Agent never uses this — agent generates its own key.
+const GATEWAY_API_SECRET = process.env.GATEWAY_API_SECRET?.trim() || "";
+
+function checkGatewayAuth(req, res) {
+  if (!GATEWAY_API_SECRET) return true; // no secret configured = allow (agent key is the only auth, for WebSocket)
+  const auth = req.headers?.authorization;
+  const token = typeof auth === "string" && auth.startsWith("Bearer ") ? auth.slice(7).trim() : "";
+  if (token !== GATEWAY_API_SECRET) {
+    res.statusCode = 401;
+    res.setHeader("Content-Type", "application/json");
+    res.end(JSON.stringify({ error: "Missing or invalid authorization." }));
+    return false;
+  }
+  return true;
+}
+
 // Batch deployment log writes to avoid SQLite lock timeouts (app and gateway share the same DB)
 const LOG_FLUSH_MS = 400;
 const LOG_FLUSH_THRESHOLD = 15;
@@ -94,6 +117,8 @@ async function setDeploymentStatus(deploymentId, status) {
 const server = http.createServer(async (req, res) => {
   const u = new URL(req.url || "/", "http://localhost");
   const pathname = u.pathname;
+
+  if (!checkGatewayAuth(req, res)) return;
 
   if (req.method === "GET" && pathname === "/agents") {
     res.setHeader("Content-Type", "application/json");
@@ -391,9 +416,27 @@ wss.on("connection", (ws) => {
     try {
       const msg = JSON.parse(data.toString());
       if (msg.type === "register") {
-        agentId = registerAgent(ws, msg.name ?? "Agent");
+        const secret = typeof msg.secret === "string" ? msg.secret.trim() : "";
+        if (!secret) {
+          console.log("[gateway] Registration rejected: missing secret.");
+          ws.send(JSON.stringify({ type: "register-failed", error: "Missing secret. Agent must send the generated key." }));
+          ws.close();
+          return;
+        }
+        const key = await prisma.agentRegistrationKey.findUnique({ where: { secret } }).catch((err) => {
+          console.error("[gateway] DB error checking key:", err?.message || err);
+          return null;
+        });
+        if (!key || !key.id) {
+          console.log("[gateway] Registration rejected: key not confirmed. Add the key in the app (Dashboard → Agents → Add Agent) first.");
+          ws.send(JSON.stringify({ type: "register-failed", error: "Key not confirmed. Add this key in the app (Dashboard → Agents → Add Agent) first, then restart the agent." }));
+          ws.close();
+          return;
+        }
+        const displayName = (key.name && key.name.trim()) ? key.name.trim() : (msg.name || "Agent");
+        agentId = registerAgent(ws, displayName);
         ws.send(JSON.stringify({ type: "registered", agentId }));
-        console.log("[gateway] Agent registered:", agentId, msg.name ?? "");
+        console.log("[gateway] Agent registered:", agentId, displayName);
       } else if (msg.type === "log" && msg.deploymentId && msg.line != null) {
         appendDeploymentLog(msg.deploymentId, msg.line);
       } else if (msg.type === "status" && msg.deploymentId && msg.status) {
@@ -469,4 +512,7 @@ server.on("upgrade", (req, socket, head) => {
 server.listen(port, () => {
   console.log("[gateway] Agent gateway on http://localhost:" + port);
   console.log("[gateway] WebSocket: ws://localhost:" + port + "/ws/agent");
+  if (!GATEWAY_API_SECRET) {
+    console.log("[gateway] GATEWAY_API_SECRET not set — HTTP API is open (only agent key required for WebSocket register).");
+  }
 });

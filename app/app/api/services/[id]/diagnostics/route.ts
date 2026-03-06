@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSessionUserId } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-
-const GATEWAY_URL = process.env.AGENT_GATEWAY_URL ?? "http://localhost:3001";
+import { gatewayFetch } from "@/lib/gateway-auth";
 
 /**
  * GET service diagnostics: container reachability and Traefik routing.
@@ -27,8 +26,8 @@ export async function GET(
   const stackName = service.stackName ?? service.name;
   const port = service.port ?? 80;
   try {
-    const res = await fetch(
-      `${GATEWAY_URL}/service-diagnostics?stackName=${encodeURIComponent(stackName)}&port=${port}`,
+    const res = await gatewayFetch(
+      `/service-diagnostics?stackName=${encodeURIComponent(stackName)}&port=${port}`,
       { cache: "no-store" }
     );
     const data = (await res.json()) as { diagnostics?: unknown; error?: string };

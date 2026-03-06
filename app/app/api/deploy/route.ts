@@ -2,8 +2,7 @@ import { NextResponse } from "next/server";
 import { getSessionUserId, getDecryptedGitHubToken } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { getLatestCommitInfo } from "@/lib/github";
-
-const GATEWAY_URL = process.env.AGENT_GATEWAY_URL ?? "http://localhost:3001";
+import { gatewayFetch } from "@/lib/gateway-auth";
 
 /**
  * Start a deployment. Requires the agent gateway running with at least one connected agent.
@@ -16,7 +15,7 @@ export async function POST(request: Request) {
 
   let agentsRes: Response;
   try {
-    agentsRes = await fetch(`${GATEWAY_URL}/agents`, { cache: "no-store" });
+    agentsRes = await gatewayFetch("/agents", { cache: "no-store" });
   } catch {
     return NextResponse.json(
       { error: "Agent gateway not reachable. Start it with: npm run agent-gateway" },
@@ -57,7 +56,7 @@ export async function POST(request: Request) {
   // Auto-assign host port on first deploy if not set (avoids conflicts with running ports)
   if (service.hostPort == null) {
     try {
-      const portRes = await fetch(`${GATEWAY_URL}/agent/available-port`, { cache: "no-store" });
+      const portRes = await gatewayFetch("/agent/available-port", { cache: "no-store" });
       const portData = (await portRes.json()) as { port?: number; error?: string };
       if (portData.port != null && portData.port >= 1 && portData.port <= 65535) {
         service = await prisma.service.update({
@@ -123,7 +122,7 @@ export async function POST(request: Request) {
   };
 
   try {
-    const dispatchRes = await fetch(`${GATEWAY_URL}/dispatch`, {
+    const dispatchRes = await gatewayFetch("/dispatch", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(job),

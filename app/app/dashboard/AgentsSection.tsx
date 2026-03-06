@@ -1,35 +1,22 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import {useState, useEffect, useCallback} from "react";
 
-type RegisteredAgent = { id: string; name: string; createdAt: string };
-type ConnectedAgent = { id: string; name: string; connectedAt: string };
+type ConnectedAgent = {id: string; name: string; connectedAt: string};
 
 export function AgentsSection() {
-  const [registered, setRegistered] = useState<RegisteredAgent[]>([]);
   const [connected, setConnected] = useState<ConnectedAgent[]>([]);
   const [loading, setLoading] = useState(true);
-  const [modalOpen, setModalOpen] = useState(false);
+  const [addModalOpen, setAddModalOpen] = useState(false);
+  const [addKey, setAddKey] = useState("");
   const [addName, setAddName] = useState("");
   const [addLoading, setAddLoading] = useState(false);
   const [addError, setAddError] = useState("");
-  const [instructionsId, setInstructionsId] = useState<string | null>(null);
-
-  const fetchRegistered = useCallback(async () => {
-    try {
-      const res = await fetch("/api/agents/registered", { credentials: "same-origin" });
-      if (res.ok) {
-        const data = await res.json();
-        setRegistered(data.agents ?? []);
-      }
-    } catch {
-      setRegistered([]);
-    }
-  }, []);
+  const [addSuccess, setAddSuccess] = useState(false);
 
   const fetchConnected = useCallback(async () => {
     try {
-      const res = await fetch("/api/agents", { credentials: "same-origin" });
+      const res = await fetch("/api/agents", {credentials: "same-origin"});
       if (res.ok) {
         const data = await res.json();
         setConnected(data.agents ?? []);
@@ -42,54 +29,46 @@ export function AgentsSection() {
   useEffect(() => {
     const load = async () => {
       setLoading(true);
-      await Promise.all([fetchRegistered(), fetchConnected()]);
+      await fetchConnected();
       setLoading(false);
     };
     load();
-    const t = setInterval(() => {
-      fetchRegistered();
-      fetchConnected();
-    }, 3000);
+    const t = setInterval(fetchConnected, 3000);
     return () => clearInterval(t);
-  }, [fetchRegistered, fetchConnected]);
+  }, [fetchConnected]);
 
-  const isConnected = (name: string) =>
-    connected.some((c) => c.name.toLowerCase() === name.toLowerCase());
-
-  async function handleAdd(e: React.FormEvent) {
+  async function handleAddAgent(e: React.FormEvent) {
     e.preventDefault();
     setAddError("");
-    const name = addName.trim();
-    if (!name) {
-      setAddError("Name is required.");
+    setAddSuccess(false);
+    const key = addKey.trim();
+    if (!key) {
+      setAddError("Paste the agent key (from the agent console).");
       return;
     }
     setAddLoading(true);
     try {
-      const res = await fetch("/api/agents/registered", {
+      const res = await fetch("/api/agents/confirm-key", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name }),
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+          secret: key,
+          name: addName.trim() || undefined,
+        }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Failed to add agent");
+      setAddSuccess(true);
+      setAddKey("");
       setAddName("");
-      setModalOpen(false);
-      await fetchRegistered();
+      setTimeout(() => {
+        setAddModalOpen(false);
+        setAddSuccess(false);
+      }, 1500);
     } catch (err) {
       setAddError(err instanceof Error ? err.message : "Failed to add agent");
     } finally {
       setAddLoading(false);
-    }
-  }
-
-  async function handleDelete(id: string) {
-    if (!confirm("Remove this agent?")) return;
-    try {
-      await fetch(`/api/agents/registered/${id}`, { method: "DELETE" });
-      await fetchRegistered();
-    } catch {
-      // ignore
     }
   }
 
@@ -99,83 +78,46 @@ export function AgentsSection() {
         <h2 className="text-lg font-semibold text-white">Agents</h2>
         <button
           type="button"
-          onClick={() => setModalOpen(true)}
+          onClick={() => setAddModalOpen(true)}
           className="rounded-xl bg-primary px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-primary-hover"
         >
-          Add agent
+          Add Agent
         </button>
       </div>
+      <p className="mb-4 text-sm text-zinc-400">
+        Run the agent (
+        <code className="rounded-native-sm border border-white/[0.06] bg-black/20 px-1">
+          cd agent &amp;&amp; npm start
+        </code>
+        ). It will print a key — copy it and add the agent above.
+      </p>
 
       {loading ? (
         <p className="text-sm text-zinc-500">Loading…</p>
-      ) : registered.length === 0 ? (
+      ) : connected.length === 0 ? (
         <p className="text-sm text-zinc-400">
-          No agents yet. Add an agent and run it with the same name to connect.
+          No agents connected. Run the agent, copy the key it prints, then use Add Agent to confirm the key.
         </p>
       ) : (
         <ul className="space-y-3">
-          {registered.map((a) => {
-            const connected_ = isConnected(a.name);
-            return (
-              <li
-                key={a.id}
-                className="flex flex-wrap items-center justify-between gap-2 rounded-native-sm border border-white/[0.06] bg-black/20 px-4 py-3"
-              >
-                <div className="flex items-center gap-3">
-                  <span className="font-medium text-white">{a.name}</span>
-                  <span
-                    className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                      connected_
-                        ? "bg-primary/15 text-primary"
-                        : "bg-zinc-600/50 text-zinc-400"
-                    }`}
-                  >
-                    <span
-                      className={`h-1.5 w-1.5 rounded-full ${
-                        connected_ ? "bg-primary" : "bg-zinc-500"
-                      }`}
-                    />
-                    {connected_ ? "Connected" : "Offline"}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setInstructionsId(instructionsId === a.id ? null : a.id)
-                    }
-                    className="text-xs text-zinc-400 hover:text-white"
-                  >
-                    {instructionsId === a.id ? "Hide" : "Run instructions"}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleDelete(a.id)}
-                    className="text-xs text-zinc-400 hover:text-red-400"
-                  >
-                    Remove
-                  </button>
-                </div>
-                {instructionsId === a.id && (
-                  <div className="mt-2 w-full border-t border-white/[0.06] pt-3">
-                    <p className="mb-2 text-xs text-zinc-500">
-                      In the agent folder, run:
-                    </p>
-                    <pre className="overflow-x-auto rounded-native-sm border border-white/[0.06] bg-black/20 px-3 py-2 text-xs text-zinc-300">
-                      AGENT_NAME={a.name} npm start
-                    </pre>
-                    <p className="mt-2 text-xs text-zinc-500">
-                      Ensure the gateway is running (e.g. <code className="rounded-native-sm border border-white/[0.06] bg-black/20 px-1">npm run agent-gateway</code> in the app folder).
-                    </p>
-                  </div>
-                )}
-              </li>
-            );
-          })}
+          {connected.map((a) => (
+            <li
+              key={a.id}
+              className="flex items-center justify-between gap-2 rounded-native-sm border border-white/[0.06] bg-black/20 px-4 py-3"
+            >
+              <div className="flex items-center gap-3">
+                <span className="font-medium text-white">{a.name}</span>
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/15 px-2.5 py-0.5 text-xs font-medium text-primary">
+                  <span className="h-1.5 w-1.5 rounded-full bg-primary" />
+                  Connected
+                </span>
+              </div>
+            </li>
+          ))}
         </ul>
       )}
 
-      {modalOpen && (
+      {addModalOpen && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4"
           role="dialog"
@@ -184,17 +126,17 @@ export function AgentsSection() {
         >
           <div
             className="absolute inset-0 bg-black/60"
-            onClick={() => setModalOpen(false)}
+            onClick={() => setAddModalOpen(false)}
             aria-hidden="true"
           />
           <div className="relative z-10 w-full max-w-md rounded-native border border-white/[0.06] bg-gl-card shadow-sm">
             <div className="flex items-center justify-between border-b border-white/[0.06] px-6 py-4">
               <h2 id="add-agent-title" className="text-lg font-semibold text-white">
-                Add agent
+                Add Agent
               </h2>
               <button
                 type="button"
-                onClick={() => setModalOpen(false)}
+                onClick={() => setAddModalOpen(false)}
                 className="rounded p-1 text-zinc-400 hover:bg-white/5 hover:text-white"
                 aria-label="Close"
               >
@@ -203,32 +145,42 @@ export function AgentsSection() {
                 </svg>
               </button>
             </div>
-            <form onSubmit={handleAdd} className="p-6 space-y-4">
+            <form onSubmit={handleAddAgent} className="p-6 space-y-4">
               {addError && (
-                <p className="rounded-md bg-red-500/10 px-3 py-2 text-sm text-red-400">
-                  {addError}
-                </p>
+                <p className="rounded-md bg-red-500/10 px-3 py-2 text-sm text-red-400">{addError}</p>
+              )}
+              {addSuccess && (
+                <p className="rounded-md bg-primary/10 px-3 py-2 text-sm text-primary">Agent added. Start (or restart) the agent to connect.</p>
               )}
               <div>
                 <label className="mb-1 block text-sm font-medium text-zinc-300">
-                  Agent name
+                  Agent key <span className="text-zinc-500">(from agent console)</span>
+                </label>
+                <input
+                  type="text"
+                  value={addKey}
+                  onChange={(e) => setAddKey(e.target.value)}
+                  placeholder="Paste the key the agent printed"
+                  className="w-full rounded-native-sm border border-white/[0.06] bg-black/20 px-3 py-2 font-mono text-sm text-white placeholder-zinc-500 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+                  autoFocus
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-zinc-300">
+                  Agent name <span className="text-zinc-500">(optional, shown when connected)</span>
                 </label>
                 <input
                   type="text"
                   value={addName}
                   onChange={(e) => setAddName(e.target.value)}
-                  placeholder="e.g. my-agent"
+                  placeholder="e.g. my-agent (leave empty to use agent default)"
                   className="w-full rounded-native-sm border border-white/[0.06] bg-black/20 px-3 py-2 text-white placeholder-zinc-500 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
-                  autoFocus
                 />
-                <p className="mt-1 text-xs text-zinc-500">
-                  Use this name when starting the agent: <code className="rounded-native-sm border border-white/[0.06] bg-black/20 px-1">AGENT_NAME={addName || "…"} npm start</code>
-                </p>
               </div>
               <div className="flex gap-2 justify-end">
                 <button
                   type="button"
-                  onClick={() => setModalOpen(false)}
+                  onClick={() => setAddModalOpen(false)}
                   className="rounded-native-sm border border-white/[0.06] px-4 py-2 text-sm text-zinc-300 hover:bg-white/[0.06]"
                 >
                   Cancel
@@ -238,7 +190,7 @@ export function AgentsSection() {
                   disabled={addLoading}
                   className="rounded-xl bg-primary px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-primary-hover disabled:opacity-50"
                 >
-                  {addLoading ? "Adding…" : "Add agent"}
+                  {addLoading ? "Adding…" : "Add Agent"}
                 </button>
               </div>
             </form>

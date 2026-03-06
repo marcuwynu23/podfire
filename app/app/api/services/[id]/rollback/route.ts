@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSessionUserId } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-
-const GATEWAY_URL = process.env.AGENT_GATEWAY_URL ?? "http://localhost:3001";
+import { gatewayFetch } from "@/lib/gateway-auth";
 
 /**
  * POST rollback: revert the running Swarm service to a previous deployment (docker service rollback, optionally multiple steps).
@@ -33,7 +32,7 @@ export async function POST(
   const steps = typeof body.steps === "number" ? Math.min(10, Math.max(1, Math.floor(body.steps))) : 1;
   const stackName = service.stackName ?? service.name;
   try {
-    const res = await fetch(`${GATEWAY_URL}/service-rollback`, {
+    const res = await gatewayFetch("/service-rollback", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ stackName, steps }),
