@@ -1,26 +1,46 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useEffect } from "react";
-import type { Deployment, Service } from "@prisma/client";
-import { useRouter } from "next/navigation";
-import { DeployButton } from "./DeployButton";
-import { CheckForUpdatesButton } from "./CheckForUpdatesButton";
-import { LogsViewer } from "./LogsViewer";
-import { AppLogsViewer } from "./AppLogsViewer";
-import { DeleteAppButton } from "./DeleteAppButton";
+import {useState, useEffect} from "react";
+import type {Deployment, Service} from "@prisma/client";
+import {useRouter} from "next/navigation";
+import {DeployButton} from "./DeployButton";
+import {CheckForUpdatesButton} from "./CheckForUpdatesButton";
+import {LogsViewer} from "./LogsViewer";
+import {AppLogsViewer} from "./AppLogsViewer";
+import {DeleteAppButton} from "./DeleteAppButton";
 
 const tabs = [
-  { id: "info", label: "Information", icon: "M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" },
-  { id: "deployments", label: "Deployments", icon: "M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" },
-  { id: "logs", label: "Logs", icon: "M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" },
-  { id: "diagnostics", label: "Diagnostics", icon: "M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" },
-  { id: "settings", label: "Settings", icon: "M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z M15 12a3 3 0 11-6 0 3 3 0 016 0z" },
+  {
+    id: "info",
+    label: "Information",
+    icon: "M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z",
+  },
+  {
+    id: "deployments",
+    label: "Deployments",
+    icon: "M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12",
+  },
+  {
+    id: "logs",
+    label: "Logs",
+    icon: "M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z",
+  },
+  {
+    id: "diagnostics",
+    label: "Diagnostics",
+    icon: "M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4",
+  },
+  {
+    id: "settings",
+    label: "Settings",
+    icon: "M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z M15 12a3 3 0 11-6 0 3 3 0 016 0z",
+  },
 ] as const;
 
 type TabId = (typeof tabs)[number]["id"];
 
-function StatusPill({ status }: { status: string }) {
+function StatusPill({status}: {status: string}) {
   const s = status === "—" ? "idle" : status;
   const styles: Record<string, string> = {
     running: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30",
@@ -41,7 +61,13 @@ function StatusPill({ status }: { status: string }) {
   );
 }
 
-type ServiceWithDeployments = Service & { deployments: Deployment[]; replicas?: number };
+type ServiceWithDeployments = Service & {
+  deployments: Deployment[];
+  replicas?: number;
+};
+
+const DEPLOY_STATUS_POLL_MS = 2500;
+const BUSY_STATUSES = ["queued", "building", "pushing", "deploying"];
 
 export function AppDetailTabs({
   service,
@@ -54,9 +80,36 @@ export function AppDetailTabs({
 }) {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<TabId>("info");
-  const status = latestDeployment?.status ?? "—";
+  const serverStatus = latestDeployment?.status ?? "—";
+  const [polledStatus, setPolledStatus] = useState<string | null>(null);
+  const status = polledStatus ?? serverStatus;
   const appUrl = `http://${service.stackName ?? service.name}.localhost`;
   const currentReplicas = service.replicas ?? 1;
+
+  // Poll deployment status while in progress so UI updates when agent finishes
+  useEffect(() => {
+    const current = polledStatus ?? serverStatus;
+    if (!BUSY_STATUSES.includes(current)) {
+      setPolledStatus(null);
+      return;
+    }
+    const interval = setInterval(async () => {
+      try {
+        const res = await fetch(`/api/services/${service.id}/status`, {
+          cache: "no-store",
+        });
+        const data = (await res.json()) as {status?: string};
+        const next = data.status ?? current;
+        setPolledStatus(next);
+        if (!BUSY_STATUSES.includes(next)) {
+          router.refresh();
+        }
+      } catch {
+        // keep polling on network error
+      }
+    }, DEPLOY_STATUS_POLL_MS);
+    return () => clearInterval(interval);
+  }, [service.id, serverStatus, polledStatus, router]);
 
   return (
     <div className="w-full space-y-6">
@@ -77,14 +130,18 @@ export function AppDetailTabs({
               <StatusPill status={status} />
             </div>
             <p className="mt-1 text-sm text-zinc-400">
-              {service.repoUrl} · <span className="text-zinc-500">{service.branch}</span>
+              {service.repoUrl} ·{" "}
+              <span className="text-zinc-500">{service.branch}</span>
             </p>
           </div>
           <div className="flex flex-col items-end gap-2">
             <div className="flex flex-wrap items-center justify-end gap-2">
               <DeployButton serviceId={service.id} currentStatus={status} />
-              {(service as { deployMode?: string }).deployMode === "auto" && (
-                <CheckForUpdatesButton serviceId={service.id} onTriggered={() => router.refresh()} />
+              {(service as {deployMode?: string}).deployMode === "auto" && (
+                <CheckForUpdatesButton
+                  serviceId={service.id}
+                  onTriggered={() => router.refresh()}
+                />
               )}
             </div>
             <span className="text-xs text-zinc-500">
@@ -186,7 +243,8 @@ export function AppDetailTabs({
           <div className="p-6">
             <h2 className="text-base font-semibold text-white">Diagnostics</h2>
             <p className="mt-0.5 text-sm text-zinc-400">
-              Check container reachability and Traefik routing. Run after deploy to verify the app is reachable.
+              Check container reachability and Traefik routing. Run after deploy
+              to verify the app is reachable.
             </p>
             <ServiceDiagnosticsBlock serviceId={service.id} />
           </div>
@@ -209,7 +267,9 @@ export function AppDetailTabs({
           <SettingsPanel
             serviceId={service.id}
             appName={service.name}
-            deployMode={(service as { deployMode?: string }).deployMode ?? "manual"}
+            deployMode={
+              (service as {deployMode?: string}).deployMode ?? "manual"
+            }
             onSaved={() => router.refresh()}
           />
         )}
@@ -241,12 +301,12 @@ function DeployModeBlock({
     try {
       const res = await fetch(`/api/services/${serviceId}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ deployMode: mode }),
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({deployMode: mode}),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setError((data as { error?: string }).error ?? "Failed to save");
+        setError((data as {error?: string}).error ?? "Failed to save");
         return;
       }
       onSaved();
@@ -261,7 +321,9 @@ function DeployModeBlock({
     <section className="mt-6 rounded-native border border-white/[0.06] bg-black/10 p-4">
       <h3 className="text-sm font-medium text-white">Deploy mode</h3>
       <p className="mt-0.5 text-xs text-zinc-500">
-        Manual: deploy only when you click Deploy. Auto: watch the app branch and deploy when there are new commits (call the auto-deploy cron periodically).
+        Manual: deploy only when you click Deploy. Auto: watch the app branch
+        and deploy when there are new commits (call the auto-deploy cron
+        periodically).
       </p>
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <select
@@ -286,12 +348,13 @@ function DeployModeBlock({
   );
 }
 
-function AppUrlPreview({ appUrl }: { appUrl: string }) {
+function AppUrlPreview({appUrl}: {appUrl: string}) {
   return (
     <section className="mt-6">
       <h3 className="text-sm font-medium text-white">Preview</h3>
       <p className="mt-0.5 text-xs text-zinc-500">
-        Rendered preview of the app. Open in new tab if the frame does not load (e.g. *.localhost).
+        Rendered preview of the app. Open in new tab if the frame does not load
+        (e.g. *.localhost).
       </p>
       <div className="mt-3 overflow-hidden rounded-native border border-white/[0.08] bg-black/30 shadow-sm">
         <iframe
@@ -307,18 +370,27 @@ function AppUrlPreview({ appUrl }: { appUrl: string }) {
 }
 
 const logSubTabs = [
-  { id: "deployment", label: "Deployment Logs" },
-  { id: "application", label: "Application Logs" },
+  {id: "deployment", label: "Deployment Logs"},
+  {id: "application", label: "Application Logs"},
 ] as const;
 
 type LogSubTabId = (typeof logSubTabs)[number]["id"];
 
-function LogsTab({ serviceId, deployments }: { serviceId: string; deployments: Deployment[] }) {
+function LogsTab({
+  serviceId,
+  deployments,
+}: {
+  serviceId: string;
+  deployments: Deployment[];
+}) {
   const [subTab, setSubTab] = useState<LogSubTabId>("deployment");
-  const [selectedDeploymentId, setSelectedDeploymentId] = useState<string | null>(
-    deployments[0]?.id ?? null
-  );
-  const selectedDeployment = deployments.find((d) => d.id === selectedDeploymentId) ?? deployments[0] ?? null;
+  const [selectedDeploymentId, setSelectedDeploymentId] = useState<
+    string | null
+  >(deployments[0]?.id ?? null);
+  const selectedDeployment =
+    deployments.find((d) => d.id === selectedDeploymentId) ??
+    deployments[0] ??
+    null;
 
   useEffect(() => {
     const firstId = deployments[0]?.id ?? null;
@@ -331,10 +403,14 @@ function LogsTab({ serviceId, deployments }: { serviceId: string; deployments: D
     <div className="p-6">
       <h2 className="text-base font-semibold text-white">Logs</h2>
       <p className="mt-0.5 text-sm text-zinc-400">
-        Build/deploy logs per deployment, or runtime logs from the running container.
+        Build/deploy logs per deployment, or runtime logs from the running
+        container.
       </p>
 
-      <nav className="mt-4 flex gap-0 border-b border-white/[0.06]" aria-label="Log type">
+      <nav
+        className="mt-4 flex gap-0 border-b border-white/[0.06]"
+        aria-label="Log type"
+      >
         {logSubTabs.map((t) => (
           <button
             key={t.id}
@@ -354,14 +430,20 @@ function LogsTab({ serviceId, deployments }: { serviceId: string; deployments: D
       {subTab === "deployment" && (
         <div className="mt-4">
           {deployments.length === 0 ? (
-            <p className="text-sm text-zinc-500">No deployments yet. Deploy to see build logs.</p>
+            <p className="text-sm text-zinc-500">
+              No deployments yet. Deploy to see build logs.
+            </p>
           ) : (
             <>
               <div className="mb-3 flex flex-wrap items-center gap-2">
-                <label className="text-sm font-medium text-zinc-400">Deployment</label>
+                <label className="text-sm font-medium text-zinc-400">
+                  Deployment
+                </label>
                 <select
                   value={selectedDeploymentId ?? ""}
-                  onChange={(e) => setSelectedDeploymentId(e.target.value || null)}
+                  onChange={(e) =>
+                    setSelectedDeploymentId(e.target.value || null)
+                  }
                   className="rounded-native-sm border border-white/[0.06] bg-black/20 px-3 py-2 text-sm text-white focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
                 >
                   {deployments.map((d) => (
@@ -417,7 +499,7 @@ type DiagnosticsResult = {
   summary: string;
 };
 
-function ServiceDiagnosticsBlock({ serviceId }: { serviceId: string }) {
+function ServiceDiagnosticsBlock({serviceId}: {serviceId: string}) {
   const [result, setResult] = useState<DiagnosticsResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -428,13 +510,17 @@ function ServiceDiagnosticsBlock({ serviceId }: { serviceId: string }) {
     setResult(null);
     setLoading(true);
     try {
-      const res = await fetch(`/api/services/${serviceId}/diagnostics`, { cache: "no-store" });
+      const res = await fetch(`/api/services/${serviceId}/diagnostics`, {
+        cache: "no-store",
+      });
       const data = await res.json();
       if (!res.ok) {
-        setError((data as { error?: string }).error ?? "Failed to run diagnostics");
+        setError(
+          (data as {error?: string}).error ?? "Failed to run diagnostics",
+        );
         return;
       }
-      const d = (data as { diagnostics?: DiagnosticsResult }).diagnostics;
+      const d = (data as {diagnostics?: DiagnosticsResult}).diagnostics;
       if (d) setResult(d);
       else setError("No diagnostics data returned");
     } catch {
@@ -459,7 +545,8 @@ function ServiceDiagnosticsBlock({ serviceId }: { serviceId: string }) {
     <section className="mt-8 rounded-native border border-white/[0.06] p-4">
       <h3 className="text-sm font-medium text-white">Service diagnostics</h3>
       <p className="mt-0.5 text-xs text-zinc-500">
-        Inspect the deployed service: container reachability (curl) and Traefik routing. Run after deploy to verify.
+        Inspect the deployed service: container reachability (curl) and Traefik
+        routing. Run after deploy to verify.
       </p>
       <button
         type="button"
@@ -473,12 +560,18 @@ function ServiceDiagnosticsBlock({ serviceId }: { serviceId: string }) {
       {result && (
         <div className="mt-4 space-y-3">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs font-medium uppercase tracking-wider text-zinc-500">Verdict</span>
-            <span className={`rounded-full border px-2.5 py-0.5 text-xs font-medium ${verdictColor}`}>
+            <span className="text-xs font-medium uppercase tracking-wider text-zinc-500">
+              Verdict
+            </span>
+            <span
+              className={`rounded-full border px-2.5 py-0.5 text-xs font-medium ${verdictColor}`}
+            >
               {result.verdict.replace(/_/g, " ")}
             </span>
             {result.containerHttpStatus != null && (
-              <span className="text-xs text-zinc-500">HTTP {result.containerHttpStatus}</span>
+              <span className="text-xs text-zinc-500">
+                HTTP {result.containerHttpStatus}
+              </span>
             )}
           </div>
           <p className="text-sm text-zinc-300">{result.summary}</p>
@@ -488,26 +581,33 @@ function ServiceDiagnosticsBlock({ serviceId }: { serviceId: string }) {
               onClick={() => setDetailsOpen((o) => !o)}
               className="text-xs font-medium text-primary hover:underline"
             >
-              {detailsOpen ? "Hide" : "Show"} details (service tasks, Traefik logs)
+              {detailsOpen ? "Hide" : "Show"} details (service tasks, Traefik
+              logs)
             </button>
             {detailsOpen && (
               <div className="mt-2 space-y-2">
                 <div>
-                  <p className="text-xs font-medium text-zinc-500">Service tasks</p>
+                  <p className="text-xs font-medium text-zinc-500">
+                    Service tasks
+                  </p>
                   <pre className="mt-1 max-h-32 overflow-auto rounded border border-white/[0.06] bg-black/20 p-2 font-mono text-xs text-zinc-400 whitespace-pre-wrap">
                     {result.serviceTasksSummary || "(none)"}
                   </pre>
                 </div>
                 {result.containerCurlError && (
                   <div>
-                    <p className="text-xs font-medium text-zinc-500">Curl error</p>
+                    <p className="text-xs font-medium text-zinc-500">
+                      Curl error
+                    </p>
                     <pre className="mt-1 max-h-20 overflow-auto rounded border border-white/[0.06] bg-black/20 p-2 font-mono text-xs text-amber-300/90 whitespace-pre-wrap">
                       {result.containerCurlError}
                     </pre>
                   </div>
                 )}
                 <div>
-                  <p className="text-xs font-medium text-zinc-500">Traefik logs (tail)</p>
+                  <p className="text-xs font-medium text-zinc-500">
+                    Traefik logs (tail)
+                  </p>
                   <pre className="mt-1 max-h-40 overflow-auto rounded border border-white/[0.06] bg-black/20 p-2 font-mono text-xs text-zinc-400 whitespace-pre-wrap">
                     {result.traefikLogs || "(no logs)"}
                   </pre>
@@ -553,12 +653,12 @@ function DeploymentsTab({
     try {
       const res = await fetch(`/api/services/${serviceId}/scale`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ replicas: num }),
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({replicas: num}),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setError((data as { error?: string }).error ?? "Scale failed");
+        setError((data as {error?: string}).error ?? "Scale failed");
         return;
       }
       onDone();
@@ -580,12 +680,12 @@ function DeploymentsTab({
     try {
       const res = await fetch(`/api/services/${serviceId}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ replicas: num }),
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({replicas: num}),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setError((data as { error?: string }).error ?? "Failed to save");
+        setError((data as {error?: string}).error ?? "Failed to save");
         return;
       }
       onDone();
@@ -600,12 +700,12 @@ function DeploymentsTab({
     try {
       const res = await fetch(`/api/services/${serviceId}/rollback`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ steps }),
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({steps}),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setError((data as { error?: string }).error ?? "Rollback failed");
+        setError((data as {error?: string}).error ?? "Rollback failed");
         return;
       }
       onDone();
@@ -627,7 +727,8 @@ function DeploymentsTab({
       <section className="mt-6 rounded-native border border-white/[0.06] p-4">
         <h3 className="text-sm font-medium text-white">Replicas</h3>
         <p className="mt-0.5 text-xs text-zinc-500">
-          Number of container replicas (1–32). Save for next deploy; Scale now applies to the running service immediately.
+          Number of container replicas (1–32). Save for next deploy; Scale now
+          applies to the running service immediately.
         </p>
         <div className="mt-3 flex flex-wrap items-center gap-2">
           <input
@@ -635,7 +736,10 @@ function DeploymentsTab({
             min={1}
             max={32}
             value={replicas}
-            onChange={(e) => { setReplicas(e.target.value); setError(null); }}
+            onChange={(e) => {
+              setReplicas(e.target.value);
+              setError(null);
+            }}
             className="w-20 rounded-native-sm border border-white/[0.06] bg-black/20 px-3 py-2 text-sm text-white focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
           />
           <button
@@ -661,64 +765,74 @@ function DeploymentsTab({
       <section className="mt-6">
         <h3 className="text-sm font-medium text-white">Deployment history</h3>
         <p className="mt-0.5 text-xs text-zinc-500">
-          Newest first. Rollback to a previous deployment (Docker Swarm reverts the service that many steps).
+          Newest first. Rollback to a previous deployment (Docker Swarm reverts
+          the service that many steps).
         </p>
         {error && <p className="mt-2 text-sm text-amber-400">{error}</p>}
         {deployments.length === 0 ? (
           <div className="mt-4 flex flex-col items-center justify-center rounded-native-sm border border-dashed border-white/10 py-12 text-center">
             <p className="text-sm text-zinc-500">No deployments yet.</p>
-            <p className="mt-1 text-xs text-zinc-600">Use the Deploy button above to trigger your first deployment.</p>
+            <p className="mt-1 text-xs text-zinc-600">
+              Use the Deploy button above to trigger your first deployment.
+            </p>
           </div>
         ) : (
           <ul className="mt-4 space-y-2">
             {deployments.map((d, index) => {
               const versionNum = index + 1;
               return (
-              <li
-                key={d.id}
-                className="flex flex-wrap items-center justify-between gap-2 rounded-native-sm border border-white/[0.06] bg-black/20 px-4 py-3 transition hover:border-white/[0.08]"
-              >
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-sm font-medium text-zinc-300">
-                    Deployment #{versionNum}
-                  </span>
-                  {index === 0 && (
-                    <span className="rounded border border-primary/40 bg-primary/10 px-2 py-0.5 text-xs text-primary">
-                      Current
+                <li
+                  key={d.id}
+                  className="flex flex-wrap items-center justify-between gap-2 rounded-native-sm border border-white/[0.06] bg-black/20 px-4 py-3 transition hover:border-white/[0.08]"
+                >
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-sm font-medium text-zinc-300">
+                      Deployment #{versionNum}
                     </span>
-                  )}
-                  <span className="text-sm text-zinc-500">
-                    {new Date(d.createdAt).toLocaleString()}
-                  </span>
-                  <StatusPill status={d.status} />
-                  {(d as { commitSha?: string | null }).commitSha && (
-                    <span className="font-mono text-xs text-zinc-500" title={(d as { commitSha?: string }).commitSha}>
-                      {(d as { commitSha: string }).commitSha.slice(0, 7)}
+                    {index === 0 && (
+                      <span className="rounded border border-primary/40 bg-primary/10 px-2 py-0.5 text-xs text-primary">
+                        Current
+                      </span>
+                    )}
+                    <span className="text-sm text-zinc-500">
+                      {new Date(d.createdAt).toLocaleString()}
                     </span>
-                  )}
-                  {(d as { commitMessage?: string | null }).commitMessage && (
-                    <span className="max-w-[200px] truncate text-xs text-zinc-500" title={(d as { commitMessage: string }).commitMessage}>
-                      {(d as { commitMessage: string }).commitMessage}
-                    </span>
-                  )}
-                </div>
-                <div className="flex items-center gap-2">
-                  {index === 0 ? (
-                    <span className="text-xs text-zinc-500">—</span>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => rollbackTo(index)}
-                      disabled={rollbackIndex !== null}
-                      className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-1.5 text-xs font-medium text-amber-300 transition hover:bg-amber-500/20 disabled:opacity-50"
-                      title={`Revert service to this deployment (${index} rollback step${index > 1 ? "s" : ""})`}
-                    >
-                      {rollbackIndex === index ? "Rolling back…" : "Rollback to this"}
-                    </button>
-                  )}
-                </div>
-              </li>
-            );})}
+                    <StatusPill status={d.status} />
+                    {(d as {commitSha?: string | null}).commitSha && (
+                      <span
+                        className="font-mono text-xs text-zinc-500"
+                        title={(d as {commitSha?: string}).commitSha}
+                      >
+                        {(d as {commitSha: string}).commitSha.slice(0, 7)}
+                      </span>
+                    )}
+                    {(d as {commitMessage?: string | null}).commitMessage && (
+                      <span
+                        className="max-w-[200px] truncate text-xs text-zinc-500"
+                        title={(d as {commitMessage: string}).commitMessage}
+                      >
+                        {(d as {commitMessage: string}).commitMessage}
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {index === 0 ? (
+                      <span className="text-xs text-zinc-500">—</span>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => rollbackTo(index)}
+                        disabled={rollbackIndex !== null}
+                        className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-1.5 text-xs font-medium text-amber-300 transition hover:bg-amber-500/20 disabled:opacity-50"
+                        title={`Revert service to this deployment (${index} rollback step${index > 1 ? "s" : ""})`}
+                      >
+                        {rollbackIndex === index ? "Rolling back…" : "Rollback"}
+                      </button>
+                    )}
+                  </div>
+                </li>
+              );
+            })}
           </ul>
         )}
       </section>
@@ -754,7 +868,8 @@ function SettingsPanel({
         <div className="border-b border-red-500/20 px-4 py-3">
           <h3 className="text-sm font-semibold text-white">Danger zone</h3>
           <p className="mt-0.5 text-xs text-zinc-400">
-            Permanently remove this app and its deployments. This cannot be undone.
+            Permanently remove this app and its deployments. This cannot be
+            undone.
           </p>
         </div>
         <div className="p-4">
