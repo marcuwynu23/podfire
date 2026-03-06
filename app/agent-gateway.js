@@ -408,33 +408,32 @@ const server = http.createServer(async (req, res) => {
   if (req.method === "POST" && pathname === "/agent/disconnect") {
     let body = "";
     req.on("data", (chunk) => { body += chunk; });
-    req.on("end", async () => {
+    req.on("end", () => {
       res.setHeader("Content-Type", "application/json");
-      try {
-        const payload = JSON.parse(body || "{}");
-        const agentId = typeof payload.agentId === "string" ? payload.agentId.trim() : "";
-        if (!agentId) {
-          res.statusCode = 400;
-          res.end(JSON.stringify({ error: "agentId required" }));
-          return;
+      const send = (code, obj) => {
+        res.statusCode = code;
+        res.end(JSON.stringify(obj));
+      };
+      (async () => {
+        try {
+          const payload = JSON.parse(body || "{}");
+          const agentId = typeof payload.agentId === "string" ? payload.agentId.trim() : "";
+          if (!agentId) {
+            send(400, { error: "agentId required" });
+            return;
+          }
+          const conn = getAgent(agentId);
+          if (conn) {
+            try { conn.ws.close(); } catch (_) {}
+            unregisterAgent(agentId);
+          }
+          send(200, { ok: true });
+        } catch (err) {
+          send(400, { error: String(err?.message || err) });
         }
-        const conn = getAgent(agentId);
-        if (!conn) {
-          res.statusCode = 404;
-          res.end(JSON.stringify({ error: "Agent not connected" }));
-          return;
-        }
-        if (conn.keyId) {
-          await prisma.agentRegistrationKey.delete({ where: { id: conn.keyId } }).catch(() => null);
-        }
-        try { conn.ws.close(); } catch (_) {}
-        unregisterAgent(agentId);
-        res.statusCode = 200;
-        res.end(JSON.stringify({ ok: true }));
-      } catch (err) {
-        res.statusCode = 400;
-        res.end(JSON.stringify({ error: String(err?.message || err) }));
-      }
+      })().catch((err) => {
+        send(500, { error: String(err?.message || err) });
+      });
     });
     return;
   }

@@ -14,6 +14,7 @@ export function AgentsSection() {
   const [addError, setAddError] = useState("");
   const [addSuccess, setAddSuccess] = useState(false);
   const [removingId, setRemovingId] = useState<string | null>(null);
+  const [removeError, setRemoveError] = useState("");
 
   const fetchConnected = useCallback(async () => {
     try {
@@ -75,6 +76,7 @@ export function AgentsSection() {
 
   async function handleRemove(agentId: string) {
     setRemovingId(agentId);
+    setRemoveError("");
     try {
       const res = await fetch("/api/agents/disconnect", {
         method: "POST",
@@ -82,11 +84,11 @@ export function AgentsSection() {
         body: JSON.stringify({ agentId }),
         credentials: "same-origin",
       });
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error ?? "Failed to remove agent");
       await fetchConnected();
-    } catch (_) {
-      // Optionally set error state; for now just re-enable button
+    } catch (err) {
+      setRemoveError(err instanceof Error ? err.message : "Failed to remove agent");
     } finally {
       setRemovingId(null);
     }
@@ -112,6 +114,9 @@ export function AgentsSection() {
         ). It will print a key — copy it and add the agent above.
       </p>
 
+      {removeError && (
+        <p className="mb-3 rounded-md bg-red-500/10 px-3 py-2 text-sm text-red-400">{removeError}</p>
+      )}
       {loading ? (
         <p className="text-sm text-zinc-500">Loading…</p>
       ) : connected.length === 0 ? (
