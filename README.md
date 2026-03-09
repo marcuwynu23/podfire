@@ -1,36 +1,46 @@
 <div align="center">
-  <h1> PodFire </h1>
+  <img src="docs/favicon.svg" alt="PodFire" width="96" height="96"/>
+</div>
+
+<div align="center">
+  <h1>PodFire</h1>
+  <p><strong>Deployment from source code management to production.</strong></p>
 </div>
 
 <p align="center">
-  <img src="https://img.shields.io/github/stars/marcuwynu23/podfire.svg" alt="Stars Badge"/>
-  <img src="https://img.shields.io/github/forks/marcuwynu23/podfire.svg" alt="Forks Badge"/>
-  <img src="https://img.shields.io/github/issues/marcuwynu23/podfire.svg" alt="Issues Badge"/>
-  <img src="https://img.shields.io/github/license/marcuwynu23/podfire.svg" alt="License Badge"/>
+  <img src="https://img.shields.io/github/stars/marcuwynu23/podfire.svg" alt="Stars"/>
+  <img src="https://img.shields.io/github/forks/marcuwynu23/podfire.svg" alt="Forks"/>
+  <img src="https://img.shields.io/github/issues/marcuwynu23/podfire.svg" alt="Issues"/>
+  <img src="https://img.shields.io/github/license/marcuwynu23/podfire.svg" alt="License"/>
 </p>
 
-**PodFire** is an open-source Platform-as-a-Service (PaaS) that deploys GitHub repositories as Dockerized applications. It provides a web dashboard, live logs, and automated deploy agents for easy self-hosting and management of services.
+<p align="center">
+  PodFire is a deployment platform that runs your repositories as Dockerized applications. Connect your repository, use one dashboard for builds and routing, and deploy without configuration overhead. Self-hosted option available.
+</p>
 
 ---
 
 ## Features
 
-* **Dashboard** — Manage services, trigger deployments, and view logs.
-* **Deploy Agents** — Automatically deploy repositories as Docker stacks.
-* **Service Management** — Define services from GitHub repos with optional environment variables and configuration.
-* **Live Logs** — Monitor deployments and service status in real-time.
-* **Automated Deploys** — Optionally enable auto-deploy on new commits.
+| Feature | Description |
+|--------|-------------|
+| **Dashboard** | Manage services, trigger deployments, and view logs in one place. |
+| **Deploy agents** | Deploy repositories as Docker stacks automatically. |
+| **Service management** | Define services from your repository with optional env vars and config. |
+| **Live logs** | Monitor deployments and service status in real time. |
+| **Auto-deploy** | Optionally deploy on new commits. |
 
 ---
 
-## Project Structure
+## Project structure
 
 ```
 podfire/
-├── app/       # Web dashboard and management interface
-├── agent/     # Deploy agents handling deployments
-├── README.md  # Project documentation
-├── DEVELOP_GUIDE.md  # Development and setup instructions
+├── app/                 # Web dashboard and management interface
+├── agent/               # Deploy agents
+├── docs/                # Documentation and marketing site
+├── README.md
+├── DEVELOPER_GUIDE.md   # Setup and development instructions
 └── .gitignore
 ```
 
@@ -38,17 +48,17 @@ podfire/
 
 ## Prerequisites
 
-* **Docker** and **Docker Swarm** initialized.
-* Network configuration for deployed services.
+- **Docker** and **Docker Swarm** (initialized)
+- Network configuration for deployed services
 
 ---
 
-## Quick Start
+## Quick start
 
 1. Set up the dashboard and configure environment variables.
-2. Run deploy agents to connect with the dashboard.
-3. Link a GitHub repository, define a service, and deploy.
-4. Monitor deployments and service status from the dashboard.
+2. Run deploy agents and connect them to the dashboard.
+3. Link a repository, define a service, and deploy.
+4. Monitor deployments and logs from the dashboard.
 
 For detailed setup and troubleshooting, see **[DEVELOPER_GUIDE.md](./DEVELOPER_GUIDE.md)**.
 
@@ -56,7 +66,6 @@ For detailed setup and troubleshooting, see **[DEVELOPER_GUIDE.md](./DEVELOPER_G
 
 ## License
 
-This project is source-available and free for personal, educational, and non-commercial use only.
+This project is source-available and free for personal, educational, and non-commercial use.
 
-Commercial use — including use by companies, organizations, startups, SaaS offerings, or revenue-generating services — is not permitted without prior written permission.
-
+Commercial use (including use by companies, organizations, startups, SaaS, or revenue-generating services) requires prior written permission.
