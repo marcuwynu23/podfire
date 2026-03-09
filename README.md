@@ -41,6 +41,7 @@ podfire/
 ├── docs/                # Documentation and marketing site
 ├── README.md
 ├── DEVELOPER_GUIDE.md   # Setup and development instructions
+├── IMPROVEMENTS.md      # Roadmap and improvement tasks
 └── .gitignore
 ```
 
