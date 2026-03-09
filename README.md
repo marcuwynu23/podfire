@@ -56,5 +56,7 @@ For detailed setup and troubleshooting, see **[DEVELOPER_GUIDE.md](./DEVELOPER_G
 
 ## License
 
-[LICENSE](./LICENSE)
+This project is source-available and free for personal, educational, and non-commercial use only.
+
+Commercial use — including use by companies, organizations, startups, SaaS offerings, or revenue-generating services — is not permitted without prior written permission.
 
