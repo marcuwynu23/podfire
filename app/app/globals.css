@@ -8,8 +8,8 @@
   --gl-card: #222224;
   --gl-card-hover: #252528;
   --gl-edge: rgba(255, 255, 255, 0.06);
-  --primary: #107bb9;
-  --primary-hover: #056196;
+  --primary: #1053b9;
+  --primary-hover: rgb(5, 73, 150);
 }
 
 body {

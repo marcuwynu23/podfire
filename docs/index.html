@@ -1,0 +1,486 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PodFire — Self-hosted deployment platform</title>
+    <meta
+      name="description"
+      content="Deploy from your repos with agent-based builds, one dashboard, automatic routing, and managed DNS. Self-hosted, your infrastructure."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Ubuntu:wght@300;400;500;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --blue-dark: #0d47a1;
+        --blue: #1053b9;
+        --gray: #525252;
+        --silver: #737373;
+        --silver-light: #a3a3a3;
+        --gray-border: #d4d4d4;
+        --bg: #f5f5f5;
+        --surface: #fff;
+        --border: #e5e5e5;
+        --text: #171717;
+        --text-muted: #525252;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+    body {
+      margin: 0;
+      font-family: "Ubuntu", sans-serif;
+      font-weight: 400;
+      font-size: 16px;
+      line-height: 1.6;
+      color: var(--text);
+      background: var(--bg);
+      -webkit-font-smoothing: antialiased;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    .page-wrap {
+      flex: 1 0 auto;
+      padding-bottom: 80px; /* space for fixed footer */
+    }
+
+      .container-fluid {
+        width: 100%;
+      }
+
+      /* Navigation */
+      .nav {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        background: linear-gradient(180deg, var(--blue) 0%, var(--blue-dark) 100%);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+      }
+
+      .nav-inner {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 16px 24px;
+        max-width: 100%;
+      }
+
+      .nav-brand {
+        text-decoration: none;
+        display: flex;
+        flex-direction: column;
+        gap: 0;
+      }
+
+      .nav-brand:hover .nav-brand-title,
+      .nav-brand:hover .nav-brand-desc {
+        color: rgba(255, 255, 255, 0.9);
+      }
+
+      .nav-brand-title {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: #fff;
+        line-height: 1.2;
+      }
+
+      .nav-brand-desc {
+        font-size: 0.6875rem;
+        font-weight: 400;
+        color: rgba(255, 255, 255, 0.8);
+        letter-spacing: 0.02em;
+        line-height: 1.2;
+      }
+
+      .nav-links {
+        display: flex;
+        align-items: center;
+        gap: 32px;
+        list-style: none;
+        margin: 0;
+        padding: 0;
+      }
+
+      .nav-links a {
+        font-size: 0.9375rem;
+        font-weight: 500;
+        color: rgba(255, 255, 255, 0.85);
+        text-decoration: none;
+      }
+
+      .nav-links a:hover {
+        color: #fff;
+      }
+
+      /* Hero */
+      .hero {
+        padding: 80px 0 64px;
+        text-align: center;
+        max-width: 100%;
+        margin: 0 auto;
+        background: linear-gradient(
+          120deg,
+          var(--blue-dark),
+          var(--blue),
+          #1560c7,
+          var(--blue),
+          var(--blue-dark)
+        );
+        background-size: 400% 400%;
+        animation: heroGradient 12s ease infinite;
+        border-radius: 0 0 16px 16px;
+        position: relative;
+      }
+
+      .hero-inner {
+        max-width: 640px;
+        margin: 0 auto;
+        padding-left: 24px;
+        padding-right: 24px;
+      }
+
+      @keyframes heroGradient {
+        0%,
+        100% {
+          background-position: 0% 50%;
+        }
+        50% {
+          background-position: 100% 50%;
+        }
+      }
+
+      .hero-badge {
+        display: inline-block;
+        font-size: 0.6875rem;
+        font-weight: 500;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: rgba(255, 255, 255, 0.7);
+        margin-bottom: 16px;
+      }
+
+      .hero h1 {
+        font-size: clamp(2.5rem, 6vw, 4rem);
+        font-weight: 700;
+        letter-spacing: -0.03em;
+        margin: 0 0 12px;
+        color: #fff;
+        line-height: 1.1;
+      }
+
+      .hero-desc {
+        font-size: 1rem;
+        font-weight: 500;
+        color: rgba(255, 255, 255, 0.85);
+        margin: 0 0 24px;
+        letter-spacing: 0.01em;
+      }
+
+      .hero .tagline {
+        font-size: 1.125rem;
+        color: rgba(255, 255, 255, 0.88);
+        margin: 0 0 28px;
+        font-weight: 400;
+        line-height: 1.7;
+        max-width: 520px;
+        margin-left: auto;
+        margin-right: auto;
+      }
+
+      .hero .tagline code {
+        font-size: 0.9em;
+        padding: 2px 8px;
+        background: rgba(255, 255, 255, 0.12);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 4px;
+        color: #fff;
+      }
+
+      .hero-tags {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 10px;
+        list-style: none;
+        padding: 0;
+        margin: 0;
+      }
+
+      .hero-tags li {
+        display: inline-block;
+      }
+
+      .hero-tags a,
+      .hero-tags span {
+        display: inline-block;
+        font-size: 0.8125rem;
+        font-weight: 500;
+        color: rgba(255, 255, 255, 0.95);
+        background: rgba(255, 255, 255, 0.12);
+        border: 1px solid rgba(255, 255, 255, 0.25);
+        border-radius: 999px;
+        padding: 6px 14px;
+        text-decoration: none;
+        transition: background 0.2s, border-color 0.2s;
+      }
+
+      .hero-tags a:hover {
+        background: rgba(255, 255, 255, 0.2);
+        border-color: rgba(255, 255, 255, 0.4);
+      }
+
+      /* Features */
+      section {
+        padding: 48px 24px;
+        border-top: 1px solid var(--border);
+      }
+
+      section h2 {
+        font-size: 0.75rem;
+        font-weight: 500;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--text-muted);
+        margin: 0 0 24px;
+      }
+
+      .features {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 24px;
+      }
+
+      .feature-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 24px;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+
+      .feature-content h3 {
+        font-size: 1rem;
+        font-weight: 500;
+        margin: 0 0 4px;
+        color: var(--text);
+      }
+
+      .feature-content p {
+        margin: 0;
+        font-size: 0.9375rem;
+        color: var(--text-muted);
+        font-weight: 300;
+      }
+
+      .feature-content code {
+        font-size: 0.85em;
+        padding: 2px 6px;
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-radius: 4px;
+      }
+
+      /* CTA */
+      .cta {
+        text-align: center;
+        padding: 48px 24px 80px;
+      }
+
+      .cta a {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 12px 24px;
+        font-family: "Ubuntu", sans-serif;
+        font-size: 0.9375rem;
+        font-weight: 500;
+        color: #fff;
+        background: linear-gradient(180deg, var(--blue) 0%, var(--blue-dark) 100%);
+        border: none;
+        border-radius: 8px;
+        text-decoration: none;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+        transition: box-shadow 0.2s, transform 0.2s;
+      }
+
+      .cta a:hover {
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
+        transform: translateY(-1px);
+      }
+
+      .cta a:active {
+        transform: translateY(0);
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
+      }
+
+      footer {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        z-index: 10;
+        padding: 32px 24px;
+        text-align: center;
+        font-size: 0.8125rem;
+        background: linear-gradient(180deg, var(--blue) 0%, var(--blue-dark) 100%);
+        color: rgba(255, 255, 255, 0.9);
+        box-shadow: 0 -1px 3px rgba(0, 0, 0, 0.08);
+      }
+
+      footer a {
+        color: rgba(255, 255, 255, 0.9);
+        text-decoration: none;
+      }
+
+      footer a:hover {
+        color: #fff;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page-wrap">
+    <nav class="nav">
+      <div class="nav-inner container-fluid">
+        <a href="#" class="nav-brand">
+          <span class="nav-brand-title">PodFire</span>
+          <span class="nav-brand-desc">Self-hosted deployment platform</span>
+        </a>
+        <ul class="nav-links">
+          <li><a href="#">Home</a></li>
+          <li>
+            <a href="https://github.com/marcuwynu23/podfire/releases"
+              >Downloads</a
+            >
+          </li>
+          <li>
+            <a href="https://github.com/marcuwynu23/podfire#readme"
+              >Documentation</a
+            >
+          </li>
+          <li><a href="https://github.com/marcuwynu23/podfire">GitHub</a></li>
+        </ul>
+      </div>
+    </nav>
+
+    <header class="hero">
+      <div class="hero-inner">
+        <p class="hero-badge">Deployment platform</p>
+        <h1>PodFire</h1>
+        <p class="hero-desc">Self-hosted deployment platform</p>
+        <p class="tagline">
+          Deploy from your repos with agent-based builds, one dashboard,
+          automatic routing, and managed DNS.
+        </p>
+        <ul class="hero-tags">
+          <li><span>Agent-based</span></li>
+          <li><span>One dashboard</span></li>
+          <li><span>Auto routing</span></li>
+          <li><span>Managed DNS</span></li>
+        </ul>
+      </div>
+    </header>
+
+    <div class="container-fluid">
+      <section>
+        <h2>Features</h2>
+        <ul class="features">
+          <li class="feature-card">
+            <div class="feature-content">
+              <h3>Self-hosted</h3>
+              <p>
+                Run everything on your own infrastructure. No vendor
+                lock-in—your code, your servers, your control.
+              </p>
+            </div>
+          </li>
+          <li class="feature-card">
+            <div class="feature-content">
+              <h3>Agent-based deploys</h3>
+              <p>
+                Agents connect to the platform, pull your code, build and
+                deploy. Scale by adding more agents when you need more capacity.
+              </p>
+            </div>
+          </li>
+          <li class="feature-card">
+            <div class="feature-content">
+              <h3>Repo-based sign-in</h3>
+              <p>
+                Sign in with your code host. Access tokens stored encrypted.
+                Link repos and branches to create and manage services.
+              </p>
+            </div>
+          </li>
+          <li class="feature-card">
+            <div class="feature-content">
+              <h3>Framework detection</h3>
+              <p>
+                Detects your app type and applies the right build and deploy
+                pipeline automatically—no manual config.
+              </p>
+            </div>
+          </li>
+          <li class="feature-card">
+            <div class="feature-content">
+              <h3>Dashboard</h3>
+              <p>
+                Manage apps, view deployment history and live logs, trigger
+                deploys, and monitor connected agents from one place.
+              </p>
+            </div>
+          </li>
+          <li class="feature-card">
+            <div class="feature-content">
+              <h3>Edge gateway</h3>
+              <p>
+                Deploy and manage the edge gateway from the dashboard. Routes
+                your domains to your apps automatically.
+              </p>
+            </div>
+          </li>
+          <li class="feature-card">
+            <div class="feature-content">
+              <h3>Managed DNS</h3>
+              <p>
+                Automatically create and assign domains for your apps—no manual
+                DNS setup. Point your apps to the world in one place.
+              </p>
+            </div>
+          </li>
+          <li class="feature-card">
+            <div class="feature-content">
+              <h3>Auto-deploy</h3>
+              <p>
+                Optional auto-deploy: the platform checks for new commits and
+                deploys for you so you stay up to date without manual steps.
+              </p>
+            </div>
+          </li>
+        </ul>
+      </section>
+
+      <div class="cta">
+        <a href="https://github.com/marcuwynu23/podfire">View on GitHub</a>
+      </div>
+    </div>
+
+    <footer>
+      <a href="https://github.com/marcuwynu23/podfire">PodFire</a> —
+      Self-hosted deployment platform
+    </footer>
+  </body>
+</html>
