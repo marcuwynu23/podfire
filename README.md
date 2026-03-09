@@ -65,6 +65,38 @@ For detailed setup and troubleshooting, see **[DEVELOPER_GUIDE.md](./DEVELOPER_G
 
 ---
 
+## Deployment workflow
+
+When you deploy an app, the request goes through the app, backend, and agent. The **Gateway (Traefik)** handles HTTP/HTTPS (80/443) and routes traffic to your deployed apps.
+
+```mermaid
+flowchart LR
+  A[You / Dashboard]
+  B[App]
+  C[Backend]
+  D[Agent]
+  E[Gateway Traefik]
+  F[Your app]
+
+  A -->|Click Deploy| B
+  B -->|Send job| C
+  C -->|Forward to agent| D
+  D -->|Build & deploy| E
+  E -->|Route 80/443| F
+  D -.->|Logs & status| B
+  B -.->|Show in dashboard| A
+```
+
+| Step | What happens |
+|------|----------------|
+| 1 | You click **Deploy** in the dashboard (or auto-deploy runs on a schedule). |
+| 2 | The **App** checks that an agent is connected, then sends the deploy job to the **Backend**. |
+| 3 | The **Backend** forwards the job to a connected **Agent**. |
+| 4 | The **Agent** clones your repo, builds the image, and deploys the stack. The **Gateway (Traefik)** routes HTTP/HTTPS traffic to your app. |
+| 5 | Logs and status stream back to the dashboard so you can see progress. |
+
+---
+
 ## License
 
 This project is source-available and free for personal, educational, and non-commercial use.

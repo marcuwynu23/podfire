@@ -43,6 +43,7 @@ Tracked ideas for making PodFire more robust, scalable, and user-friendly. Use t
 
 - [ ] **Managed DNS** — Optional integration with a DNS provider (e.g. Cloudflare, Route53) for automatic records.
 - [ ] **TLS / HTTPS** — Automatic or user-provided certificates per domain with renewal.
+- [ ] **SSL + Cloudflare DNS per app** — Integration that automatically assigns a Cloudflare DNS record and provisions/renews SSL (e.g. via Let’s Encrypt or Cloudflare edge certs) for each app’s custom domain, configurable per app in the dashboard.
 - [ ] **Rate limiting** — Configurable rate limits per service or per route at the edge.
 - [ ] **Access control** — Optional basic auth or IP allowlist per service or path.
 
