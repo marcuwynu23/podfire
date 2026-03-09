@@ -56,5 +56,5 @@ For detailed setup and troubleshooting, see **[DEVELOPER_GUIDE.md](./DEVELOPER_G
 
 ## License
 
-Private / internal use unless otherwise specified.
+[LICENSE](./LICENSE)
 
