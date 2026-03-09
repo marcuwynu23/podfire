@@ -4,6 +4,8 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>PodFire — Self-hosted deployment platform</title>
+    <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="favicon.svg" />
     <meta
       name="description"
       content="Deploy from your repos with agent-based builds, one dashboard, automatic routing, and managed DNS. Self-hosted, your infrastructure."
@@ -16,15 +18,19 @@
     />
     <style>
       :root {
-        --blue-dark: #0d47a1;
-        --blue: #1053b9;
+        --nav-height: 72px;
+        --fire-dark: #9a3412;
+        --fire: #ea580c;
+        --fire-mid: #f97316;
+        --fire-light: #fbbf24;
+        --accent: #ea580c;
         --gray: #525252;
         --silver: #737373;
         --silver-light: #a3a3a3;
         --gray-border: #d4d4d4;
-        --bg: #f5f5f5;
+        --bg: #fef7ed;
         --surface: #fff;
-        --border: #e5e5e5;
+        --border: #fed7aa;
         --text: #171717;
         --text-muted: #525252;
       }
@@ -49,20 +55,41 @@
 
     .page-wrap {
       flex: 1 0 auto;
-      padding-bottom: 80px; /* space for fixed footer */
     }
 
       .container-fluid {
         width: 100%;
       }
 
-      /* Navigation */
+      /* Navigation: white by default, transparent over hero */
       .nav {
         position: sticky;
         top: 0;
         z-index: 10;
-        background: linear-gradient(180deg, var(--blue) 0%, var(--blue-dark) 100%);
+        background: #fff;
         box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+        transition: background 0.2s, box-shadow 0.2s;
+      }
+      .nav::after {
+        content: "";
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        height: 3px;
+        background: linear-gradient(90deg, var(--fire-light), var(--fire), var(--fire-dark));
+      }
+      body.at-hero .nav {
+        background: transparent;
+        box-shadow: none;
+      }
+      body.at-hero .nav::after {
+        display: none;
+      }
+      body.at-hero .hero {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
       }
 
       .nav-inner {
@@ -76,29 +103,40 @@
       .nav-brand {
         text-decoration: none;
         display: flex;
+        flex-direction: row;
+        align-items: center;
+        gap: 0.5rem;
+      }
+      .nav-brand-text {
+        display: flex;
         flex-direction: column;
         gap: 0;
       }
-
-      .nav-brand:hover .nav-brand-title,
-      .nav-brand:hover .nav-brand-desc {
-        color: rgba(255, 255, 255, 0.9);
+      .nav-brand-icon {
+        width: 32px;
+        height: 32px;
+        flex-shrink: 0;
       }
 
       .nav-brand-title {
         font-size: 1.25rem;
         font-weight: 700;
-        color: #fff;
+        color: #57534e;
         line-height: 1.2;
       }
 
       .nav-brand-desc {
         font-size: 0.6875rem;
         font-weight: 400;
-        color: rgba(255, 255, 255, 0.8);
+        color: #78716c;
         letter-spacing: 0.02em;
         line-height: 1.2;
       }
+
+      body.at-hero .nav-brand-title { color: #fff; }
+      body.at-hero .nav-brand-desc { color: rgba(255, 255, 255, 0.8); }
+      body.at-hero .nav-brand:hover .nav-brand-title,
+      body.at-hero .nav-brand:hover .nav-brand-desc { color: rgba(255, 255, 255, 0.9); }
 
       .nav-links {
         display: flex;
@@ -112,27 +150,32 @@
       .nav-links a {
         font-size: 0.9375rem;
         font-weight: 500;
-        color: rgba(255, 255, 255, 0.85);
+        color: #57534e;
         text-decoration: none;
       }
 
-      .nav-links a:hover {
-        color: #fff;
-      }
+      body.at-hero .nav-links a { color: rgba(255, 255, 255, 0.85); }
+      body.at-hero .nav-links a:hover { color: #fff; }
 
-      /* Hero */
+      /* Hero: full viewport, background overlaps header (not affected by nav padding) */
       .hero {
-        padding: 80px 0 64px;
+        margin-top: calc(-1 * var(--nav-height));
+        padding: calc(80px + var(--nav-height)) 0 64px;
+        min-height: 100vh;
+        min-height: 100dvh;
+        box-sizing: border-box;
         text-align: center;
-        max-width: 100%;
-        margin: 0 auto;
+        width: 100%;
+        margin-left: 0;
+        margin-right: 0;
         background: linear-gradient(
           120deg,
-          var(--blue-dark),
-          var(--blue),
-          #1560c7,
-          var(--blue),
-          var(--blue-dark)
+          var(--fire-dark),
+          var(--fire),
+          var(--fire-mid),
+          var(--fire-light),
+          var(--fire),
+          var(--fire-dark)
         );
         background-size: 400% 400%;
         animation: heroGradient 12s ease infinite;
@@ -308,46 +351,80 @@
         font-family: "Ubuntu", sans-serif;
         font-size: 0.9375rem;
         font-weight: 500;
-        color: #fff;
-        background: linear-gradient(180deg, var(--blue) 0%, var(--blue-dark) 100%);
-        border: none;
+        color: var(--fire-dark);
+        background: linear-gradient(var(--bg), var(--bg)) padding-box,
+          linear-gradient(135deg, var(--fire-light), var(--fire), var(--fire-dark)) border-box;
+        border: 2px solid transparent;
         border-radius: 8px;
         text-decoration: none;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
-        transition: box-shadow 0.2s, transform 0.2s;
+        transition: transform 0.2s, opacity 0.2s;
       }
 
       .cta a:hover {
-        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
+        opacity: 0.9;
         transform: translateY(-1px);
       }
 
       .cta a:active {
         transform: translateY(0);
-        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
       }
 
       footer {
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        z-index: 10;
+        position: relative;
         padding: 32px 24px;
         text-align: center;
         font-size: 0.8125rem;
-        background: linear-gradient(180deg, var(--blue) 0%, var(--blue-dark) 100%);
-        color: rgba(255, 255, 255, 0.9);
+        background: #fff;
+        color: #57534e;
         box-shadow: 0 -1px 3px rgba(0, 0, 0, 0.08);
+      }
+      footer::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 0;
+        height: 3px;
+        background: linear-gradient(90deg, var(--fire-light), var(--fire), var(--fire-dark));
       }
 
       footer a {
-        color: rgba(255, 255, 255, 0.9);
+        color: #57534e;
         text-decoration: none;
       }
 
-      footer a:hover {
-        color: #fff;
+      /* Mobile menu */
+      .nav-toggle { display: none; flex-direction: column; justify-content: center; gap: 5px; width: 44px; height: 44px; padding: 0; border: none; background: transparent; color: #57534e; cursor: pointer; border-radius: 8px; -webkit-tap-highlight-color: transparent; }
+      body.at-hero .nav-toggle { color: #fff; }
+      body.at-hero .nav-toggle:hover { background: rgba(255,255,255,0.15); }
+      .nav-toggle__bar { display: block; width: 22px; height: 2.5px; background: currentColor; border-radius: 2px; transition: transform 0.25s, opacity 0.25s; }
+      body.nav-open .nav-toggle__bar:nth-child(1) { transform: translateY(7.5px) rotate(45deg); }
+      body.nav-open .nav-toggle__bar:nth-child(2) { opacity: 0; }
+      body.nav-open .nav-toggle__bar:nth-child(3) { transform: translateY(-7.5px) rotate(-45deg); }
+      .nav-backdrop, .nav-drawer { display: none; }
+      @media (max-width: 768px) {
+        .nav-inner { position: relative; }
+        .nav-toggle { display: flex; order: 2; margin-left: auto; }
+        .nav .nav-links { display: none; }
+        .nav-backdrop { display: block; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1001; opacity: 0; visibility: hidden; transition: opacity 0.25s, visibility 0.25s; }
+        body.nav-open .nav-backdrop { opacity: 1; visibility: visible; }
+        .nav-drawer { display: block; position: fixed; top: 0; left: 0; width: min(280px, 85vw); height: 100%; background: var(--surface); box-shadow: 4px 0 24px rgba(0,0,0,0.15); z-index: 1002; overflow-y: auto; transform: translateX(-100%); transition: transform 0.25s ease-out; }
+        body.nav-open .nav-drawer { transform: translateX(0); }
+        .nav-drawer__links { list-style: none; margin: 0; padding: 1rem 0; }
+        .nav-drawer__links li { margin: 0; }
+        .nav-drawer__links a { display: flex; align-items: center; padding: 1rem 1.5rem; color: var(--text); text-decoration: none; font-weight: 500; font-size: 1rem; transition: background 0.15s; }
+        .nav-drawer__links a:hover { background: var(--border); color: var(--accent); }
+        body.nav-open { overflow: hidden; }
+        .hero { padding: calc(48px + var(--nav-height)) 0 40px; }
+        .hero-inner { padding-left: 16px; padding-right: 16px; }
+        .hero h1 { font-size: clamp(1.75rem, 5vw, 2.5rem); }
+        .hero .tagline { font-size: 1rem; margin-bottom: 20px; }
+        .hero-tags { gap: 8px; }
+        section { padding: 32px 16px; }
+        .features { grid-template-columns: 1fr; gap: 16px; }
+        .feature-card { padding: 20px; }
+        .cta { padding: 32px 16px 64px; }
+        footer { padding: 24px 16px; font-size: 0.75rem; }
       }
     </style>
   </head>
@@ -356,9 +433,17 @@
     <nav class="nav">
       <div class="nav-inner container-fluid">
         <a href="#" class="nav-brand">
-          <span class="nav-brand-title">PodFire</span>
-          <span class="nav-brand-desc">Self-hosted deployment platform</span>
+          <img src="favicon.svg" alt="" class="nav-brand-icon" />
+          <span class="nav-brand-text">
+            <span class="nav-brand-title">PodFire</span>
+            <span class="nav-brand-desc">Self-hosted deployment platform</span>
+          </span>
         </a>
+        <button type="button" class="nav-toggle" id="nav-toggle" aria-label="Open menu" aria-expanded="false" aria-controls="nav-drawer">
+          <span class="nav-toggle__bar"></span>
+          <span class="nav-toggle__bar"></span>
+          <span class="nav-toggle__bar"></span>
+        </button>
         <ul class="nav-links">
           <li><a href="#">Home</a></li>
           <li>
@@ -373,6 +458,15 @@
           </li>
           <li><a href="https://github.com/marcuwynu23/podfire">GitHub</a></li>
         </ul>
+        <div class="nav-backdrop" id="nav-backdrop" aria-hidden="true"></div>
+        <div class="nav-drawer" id="nav-drawer" role="dialog" aria-label="Navigation menu" aria-hidden="true">
+          <ul class="nav-drawer__links">
+            <li><a href="#">Home</a></li>
+            <li><a href="https://github.com/marcuwynu23/podfire/releases">Downloads</a></li>
+            <li><a href="https://github.com/marcuwynu23/podfire#readme">Documentation</a></li>
+            <li><a href="https://github.com/marcuwynu23/podfire">GitHub</a></li>
+          </ul>
+        </div>
       </div>
     </nav>
 
@@ -482,5 +576,6 @@
       <a href="https://github.com/marcuwynu23/podfire">PodFire</a> —
       Self-hosted deployment platform
     </footer>
+    <script src="nav.js"></script>
   </body>
 </html>
