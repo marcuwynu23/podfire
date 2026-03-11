@@ -1,9 +1,11 @@
 "use client";
 
-import {useState, useEffect} from "react";
+import {useState, useEffect, useMemo} from "react";
 import type {Deployment} from "@prisma/client";
-import {LogsViewer} from "../../log/LogsViewer";
+import {LogsViewer} from "../log/LogsViewer";
 import {StatusPill} from "../props/StatusPill";
+
+const PAGE_SIZE = 5;
 
 type DeploymentWithMeta = Deployment & {
   retryCount?: number;
@@ -23,13 +25,25 @@ export function DeploymentsTab({
   const [rollbackIndex, setRollbackIndex] = useState<number | null>(null);
   const [retryingId, setRetryingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
   const [selectedDeploymentId, setSelectedDeploymentId] = useState<
     string | null
   >(deployments[0]?.id ?? null);
+
+  const totalPages = Math.max(1, Math.ceil(deployments.length / PAGE_SIZE));
+  const paginatedDeployments = useMemo(() => {
+    const start = (currentPage - 1) * PAGE_SIZE;
+    return deployments.slice(start, start + PAGE_SIZE);
+  }, [deployments, currentPage]);
+
   const selectedDeployment =
     deployments.find((d) => d.id === selectedDeploymentId) ??
     deployments[0] ??
     null;
+
+  useEffect(() => {
+    if (currentPage > totalPages) setCurrentPage(1);
+  }, [currentPage, totalPages]);
 
   useEffect(() => {
     if (
@@ -101,22 +115,25 @@ export function DeploymentsTab({
 
   return (
     <div className="flex flex-col p-4 sm:p-6 lg:flex-row lg:gap-6">
-      <section className="min-w-0 flex-1 lg:max-w-sm">
-        <h2 className="text-base font-semibold text-gl-text">Deployments</h2>
-        <p className="mt-0.5 text-sm text-gl-text-muted">
+      <section className="flex flex-col min-w-0 flex-1 lg:max-w-sm">
+        <h2 className="shrink-0 text-base font-semibold text-gl-text">Deployments</h2>
+        <p className="mt-0.5 shrink-0 text-sm text-gl-text-muted">
           Select a deployment to view its build logs. Rollback from the list.
         </p>
-        {error && <p className="mt-2 text-sm text-amber-400">{error}</p>}
+        {error && <p className="mt-2 shrink-0 text-sm text-amber-400">{error}</p>}
         {deployments.length === 0 ? (
-          <div className="mt-4 flex flex-col items-center justify-center rounded-native-sm border border-dashed border-gl-edge py-12 text-center">
+          <div className="mt-4 flex flex-1 flex-col items-center justify-center rounded-native-sm border border-dashed border-gl-edge py-12 text-center">
             <p className="text-sm text-gl-text-muted">No deployments yet.</p>
             <p className="mt-1 text-xs text-gl-text-muted">
               Use the Deploy button above to trigger your first deployment.
             </p>
           </div>
         ) : (
-          <ul className="mt-4 space-y-3" role="list">
-            {deployments.map((d, index) => {
+          <>
+          <div className="mt-4 h-[30rem] max-h-[30rem] overflow-y-auto">
+          <ul className="space-y-3" role="list">
+            {paginatedDeployments.map((d, i) => {
+              const index = (currentPage - 1) * PAGE_SIZE + i;
               const versionNum = index + 1;
               const isSelected = d.id === selectedDeploymentId;
               const commitSha = (d as {commitSha?: string | null}).commitSha;
@@ -263,16 +280,51 @@ export function DeploymentsTab({
               );
             })}
           </ul>
+          </div>
+          {totalPages > 1 && (
+            <nav
+              className="mt-4 shrink-0 flex-wrap items-center justify-between gap-2 border-t border-gl-edge pt-4 flex"
+              aria-label="Deployment list pagination"
+            >
+              <span className="text-xs text-gl-text-muted">
+                {(currentPage - 1) * PAGE_SIZE + 1}–{Math.min(currentPage * PAGE_SIZE, deployments.length)} of {deployments.length}
+              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  disabled={currentPage <= 1}
+                  className="rounded-lg border border-gl-edge bg-gl-input-bg px-3 py-1.5 text-xs font-medium text-gl-text transition hover:bg-gl-hover disabled:cursor-not-allowed disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-primary/40"
+                  aria-label="Previous page"
+                >
+                  Previous
+                </button>
+                <span className="text-xs text-gl-text-muted">
+                  Page {currentPage} of {totalPages}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={currentPage >= totalPages}
+                  className="rounded-lg border border-gl-edge bg-gl-input-bg px-3 py-1.5 text-xs font-medium text-gl-text transition hover:bg-gl-hover disabled:cursor-not-allowed disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-primary/40"
+                  aria-label="Next page"
+                >
+                  Next
+                </button>
+              </div>
+            </nav>
+          )}
+          </>
         )}
       </section>
 
-      <section className="mt-6 min-w-0 flex-1 lg:mt-0">
-        <h3 className="text-sm font-medium text-gl-text">Build logs</h3>
-        <p className="mt-0.5 text-xs text-gl-text-muted">
+      <section className="mt-6 flex flex-col min-w-0 flex-1 lg:mt-0">
+        <h3 className="shrink-0 text-sm font-medium text-gl-text">Build logs</h3>
+        <p className="mt-0.5 shrink-0 text-xs text-gl-text-muted">
           Build, push, and deploy output for the selected deployment.
         </p>
         {selectedDeployment ? (
-          <div className="mt-3 rounded-native-sm border border-gl-edge bg-gl-input-bg p-3 sm:p-4">
+          <div className="mt-3 flex h-[30rem] flex-col overflow-hidden rounded-native-sm border border-gl-edge bg-gl-input-bg p-3 sm:p-4">
             <LogsViewer
               deploymentId={selectedDeployment.id}
               initialLogs={
@@ -282,7 +334,7 @@ export function DeploymentsTab({
             />
           </div>
         ) : (
-          <div className="mt-3 flex items-center justify-center rounded-native-sm border border-dashed border-gl-edge py-12 text-center">
+          <div className="mt-3 flex h-[30rem] items-center justify-center rounded-native-sm border border-dashed border-gl-edge text-center">
             <p className="text-sm text-gl-text-muted">
               Select a deployment to view logs.
             </p>
