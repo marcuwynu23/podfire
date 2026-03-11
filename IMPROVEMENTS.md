@@ -1,3 +1,5 @@
+**\_Last updated: March 11, 2026**
+
 # PodFire — Improvements & roadmap
 
 Tracked ideas for making PodFire more robust, scalable, and user-friendly. Use this for planning and contributions.
@@ -9,7 +11,7 @@ Tracked ideas for making PodFire more robust, scalable, and user-friendly. Use t
 - [ ] **Convert agent to Go** — Rewrite the deploy agent in Go for a single binary, lower memory footprint, and better performance under load. Improves robustness and deployment on resource-constrained nodes.
 - [ ] **Agent health checks** — Periodic heartbeat and readiness checks from dashboard; mark agents offline when unresponsive.
 - [ ] **Agent resource limits** — Configurable CPU/memory caps per agent or per job to avoid runaway builds.
-- [ ] **Parallel deploy jobs** — Allow multiple deploy jobs per agent (queue or worker pool) to reduce wait times.
+- [x] **Parallel deploy jobs** — Allow multiple deploy jobs per agent (queue or worker pool) to reduce wait times.
 - [ ] **Retry and backoff** — Automatic retries for failed deploys with exponential backoff and max attempts.
 - [ ] **Structured deploy logs** — Emit machine-readable log events (phases, duration, errors) for better dashboard UX and debugging.
 
@@ -17,9 +19,9 @@ Tracked ideas for making PodFire more robust, scalable, and user-friendly. Use t
 
 ## Dashboard (app)
 
-- [ ] **Dark mode** — Theme toggle and persisted preference for the dashboard UI.
-- [ ] **Deploy history / timeline** — Per-service or per-app list of past deploys with status, commit, and duration.
-- [ ] **Rollback one-click** — One-click rollback to a previous successful deployment from the history.
+- [x] **Dark mode** — Theme toggle and persisted preference for the dashboard UI.
+- [x] **Deploy history / timeline** — Per-service or per-app list of past deploys with status, commit, and duration.
+- [x] **Rollback one-click** — One-click rollback to a previous successful deployment from the history.
 - [ ] **Notifications** — In-app or optional email/webhook when a deploy fails or succeeds.
 - [ ] **Environment groups** — Group env vars (e.g. staging vs production) and apply per branch or environment.
 - [ ] **Secrets management** — Encrypted secrets per service with audit log for access.
@@ -41,9 +43,9 @@ Tracked ideas for making PodFire more robust, scalable, and user-friendly. Use t
 
 ## Gateway & networking
 
-- [ ] **Managed DNS** — Optional integration with a DNS provider (e.g. Cloudflare, Route53) for automatic records.
-- [ ] **TLS / HTTPS** — Automatic or user-provided certificates per domain with renewal.
-- [ ] **SSL + Cloudflare DNS per app** — Integration that automatically assigns a Cloudflare DNS record and provisions/renews SSL (e.g. via Let’s Encrypt or Cloudflare edge certs) for each app’s custom domain, configurable per app in the dashboard.
+- [x] **Managed DNS** — Optional integration with a DNS provider (e.g. Cloudflare, Route53) for automatic records.
+- [x] **TLS / HTTPS** — Automatic or user-provided certificates per domain with renewal.
+- [x] **SSL + Cloudflare DNS per app** — Integration that automatically assigns a Cloudflare DNS record and provisions/renews SSL (e.g. via Let’s Encrypt or Cloudflare edge certs) for each app’s custom domain, configurable per app in the dashboard.
 - [ ] **Rate limiting** — Configurable rate limits per service or per route at the edge.
 - [ ] **Access control** — Optional basic auth or IP allowlist per service or path.
 
@@ -51,7 +53,7 @@ Tracked ideas for making PodFire more robust, scalable, and user-friendly. Use t
 
 ## Integrations
 
-- [ ] **GitLab and Bitbucket** — Support GitLab and Bitbucket in addition to GitHub for repository connection.
+- [x] **GitLab and Bitbucket** — Support GitLab and Bitbucket in addition to GitHub for repository connection.
 - [ ] **Webhooks** — Outgoing webhooks on deploy events (start, success, failure) for Slack, Discord, or custom endpoints.
 - [ ] **Status page** — Optional public status page for “all systems” or per-service availability.
 - [ ] **API for automation** — REST or simple API to trigger deploys, list services, and fetch status for CI or scripts.
@@ -78,10 +80,8 @@ Tracked ideas for making PodFire more robust, scalable, and user-friendly. Use t
 
 ## Scale & performance
 
-- [ ] **Horizontal scaling** — Run multiple dashboard instances behind a load balancer with shared DB and session store.
+- [x] **Horizontal scaling** — Run multiple dashboard instances behind a load balancer with shared DB and session store.
 - [ ] **Job queue** — Move long-running deploy jobs to a queue (e.g. Redis/Bull, or Go-based worker) so the API stays responsive.
 - [ ] **Asset and static optimization** — Ensure dashboard static assets are cached and minimal for fast load.
 
 ---
-
-*Last updated: 2026. Add or check off items as the project evolves.*
