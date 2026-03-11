@@ -80,7 +80,7 @@ export function AppLogsViewer({
   }, []);
 
   return (
-    <div>
+    <div className="flex min-h-[32rem] flex-col">
       <div className="flex items-center justify-between gap-2">
         <p className="text-sm text-gl-text-muted">
           {live
@@ -100,7 +100,7 @@ export function AppLogsViewer({
       <pre
         ref={preRef}
         onScroll={handleScroll}
-        className="mt-3 max-h-80 overflow-auto rounded-native-sm border border-gl-edge bg-gl-input-bg p-4 font-mono text-sm leading-relaxed text-gl-text-muted whitespace-pre-wrap"
+        className="mt-3 min-h-[28rem] max-h-[36rem] overflow-auto rounded-native-sm border border-gl-edge bg-gl-input-bg p-4 font-mono text-sm leading-relaxed text-gl-text-muted whitespace-pre-wrap"
       >
         {logs ?? (loading ? "Loading…" : "Loading runtime logs…")}
       </pre>

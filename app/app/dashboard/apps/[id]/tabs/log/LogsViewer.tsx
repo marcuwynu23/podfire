@@ -11,6 +11,9 @@ export function LogsViewer({
   initialLogs: string | null;
   embedded?: boolean;
 }) {
+  const preClassName = embedded
+    ? "logs-viewer-scroll min-h-0 flex-1 overflow-auto rounded-native-sm border border-gl-edge bg-gl-input-bg p-4 font-mono text-sm leading-relaxed text-gl-text-muted whitespace-pre-wrap"
+    : "logs-viewer-scroll max-h-96 overflow-auto rounded-native-sm border border-gl-edge bg-gl-input-bg p-4 font-mono text-sm leading-relaxed text-gl-text-muted whitespace-pre-wrap";
   const [logs, setLogs] = useState(initialLogs ?? "");
   const [status, setStatus] = useState<string | null>(null);
   const [fetchError, setFetchError] = useState<string | null>(null);
@@ -87,7 +90,7 @@ export function LogsViewer({
       <pre
         ref={preRef}
         onScroll={handleScroll}
-        className="logs-viewer-scroll max-h-96 overflow-auto rounded-native-sm border border-gl-edge bg-gl-input-bg p-4 font-mono text-sm leading-relaxed text-gl-text-muted whitespace-pre-wrap"
+        className={preClassName}
       >
         {logs || "No logs yet."}
       </pre>
@@ -95,7 +98,7 @@ export function LogsViewer({
   );
 
   if (embedded) {
-    return <div>{content}</div>;
+    return <div className="flex min-h-0 flex-1 flex-col">{content}</div>;
   }
 
   return (
