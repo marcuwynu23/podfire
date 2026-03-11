@@ -14,7 +14,7 @@ const {
   listAgents,
   dispatchJob,
   getFirstAgent,
-} = require("./lib/agent-connections.js");
+} = require("./lib/agent-connections");
 
 const traefikStatusPending = new Map();
 const availablePortPending = new Map();
@@ -103,16 +103,28 @@ function appendDeploymentLog(deploymentId, line) {
   return Promise.resolve();
 }
 
+const MAX_AUTO_RETRIES = 3;
+const APP_URL = (process.env.APP_URL || "").trim();
+const APP_CALLBACK_SECRET = (process.env.APP_CALLBACK_SECRET || process.env.DEPLOY_FAILED_CALLBACK_SECRET || "").trim();
+
 async function setDeploymentStatus(deploymentId, status) {
   const deployment = await prisma.deployment.update({
     where: { id: deploymentId },
     data: { status },
-    select: { serviceId: true, commitSha: true },
+    select: { serviceId: true, commitSha: true, retryCount: true },
   });
   if (status === "running" && deployment.commitSha) {
     await prisma.service.update({
       where: { id: deployment.serviceId },
       data: { lastDeployedCommitSha: deployment.commitSha },
+    });
+  }
+  if (status === "failed" && APP_URL && deployment.retryCount < MAX_AUTO_RETRIES) {
+    const url = APP_URL.replace(/\/$/, "") + "/api/internal/deploy-failed";
+    const headers = { "Content-Type": "application/json" };
+    if (APP_CALLBACK_SECRET) headers["Authorization"] = "Bearer " + APP_CALLBACK_SECRET;
+    fetch(url, { method: "POST", headers, body: JSON.stringify({ deploymentId }) }).catch((err) => {
+      console.error("[gateway] deploy-failed callback error:", err?.message || err);
     });
   }
 }
@@ -138,6 +150,25 @@ const server = http.createServer(async (req, res) => {
         const sent = dispatchJob(payload);
         res.setHeader("Content-Type", "application/json");
         res.end(JSON.stringify({ ok: sent }));
+      } catch (err) {
+        res.statusCode = 400;
+        res.setHeader("Content-Type", "application/json");
+        res.end(JSON.stringify({ error: String(err.message) }));
+      }
+    });
+    return;
+  }
+
+  if (req.method === "POST" && pathname === "/update-stack-labels") {
+    let body = "";
+    req.on("data", (chunk) => { body += chunk; });
+    req.on("end", () => {
+      try {
+        const payload = JSON.parse(body || "{}");
+        const msg = { type: "update-stack-labels", ...payload };
+        const sent = dispatchJob(msg);
+        res.setHeader("Content-Type", "application/json");
+        res.end(JSON.stringify({ ok: sent, error: sent ? null : "No agent connected" }));
       } catch (err) {
         res.statusCode = 400;
         res.setHeader("Content-Type", "application/json");
@@ -508,13 +539,31 @@ wss.on("connection", (ws) => {
         }
         const displayName = (key.name && key.name.trim()) ? key.name.trim() : (msg.name || "Agent");
         agentId = registerAgent(ws, displayName, key.id);
+        await prisma.agentRegistrationKey.update({ where: { id: key.id }, data: { lastSeenAt: new Date() } }).catch(() => {});
         ws.send(JSON.stringify({ type: "registered", agentId }));
         console.log("[gateway] Agent registered:", agentId, displayName);
+      } else if (msg.type === "heartbeat" && agentId) {
+        const conn = getAgent(agentId);
+        if (conn && conn.keyId) {
+          await prisma.agentRegistrationKey.update({ where: { id: conn.keyId }, data: { lastSeenAt: new Date() } }).catch(() => {});
+        }
       } else if (msg.type === "log" && msg.deploymentId && msg.line != null) {
         appendDeploymentLog(msg.deploymentId, msg.line);
       } else if (msg.type === "status" && msg.deploymentId && msg.status) {
         await flushDeploymentLog(msg.deploymentId);
         await setDeploymentStatus(msg.deploymentId, msg.status);
+      } else if (msg.type === "phase" && msg.deploymentId && msg.phase != null && typeof msg.durationSeconds === "number") {
+        try {
+          const d = await prisma.deployment.findUnique({ where: { id: msg.deploymentId }, select: { phaseDurations: true } });
+          const current = (d?.phaseDurations && (() => { try { return JSON.parse(d.phaseDurations); } catch { return {}; } })()) || {};
+          current[String(msg.phase)] = msg.durationSeconds;
+          await prisma.deployment.update({
+            where: { id: msg.deploymentId },
+            data: { phaseDurations: JSON.stringify(current) },
+          });
+        } catch (e) {
+          console.error("[gateway] phase update error:", e?.message || e);
+        }
       } else if (msg.type === "traefik-status" && msg.requestId != null) {
         const pending = traefikStatusPending.get(msg.requestId);
         if (pending) {

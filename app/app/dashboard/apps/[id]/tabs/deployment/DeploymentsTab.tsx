@@ -5,16 +5,22 @@ import type {Deployment} from "@prisma/client";
 import {LogsViewer} from "../../log/LogsViewer";
 import {StatusPill} from "../StatusPill";
 
+type DeploymentWithMeta = Deployment & {
+  retryCount?: number;
+  phaseDurations?: string | null;
+};
+
 export function DeploymentsTab({
   serviceId,
   deployments,
   onDone,
 }: {
   serviceId: string;
-  deployments: Deployment[];
+  deployments: DeploymentWithMeta[];
   onDone: () => void;
 }) {
   const [rollbackIndex, setRollbackIndex] = useState<number | null>(null);
+  const [retryingId, setRetryingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [selectedDeploymentId, setSelectedDeploymentId] = useState<
     string | null
@@ -55,6 +61,41 @@ export function DeploymentsTab({
     }
   }
 
+  async function retryDeployment(deploymentId: string) {
+    setError(null);
+    setRetryingId(deploymentId);
+    try {
+      const res = await fetch(`/api/deployments/${deploymentId}/retry`, {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        credentials: "same-origin",
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setError((data as {error?: string}).error ?? "Retry failed");
+        return;
+      }
+      onDone();
+    } catch {
+      setError("Request failed");
+    } finally {
+      setRetryingId(null);
+    }
+  }
+
+  function formatPhaseDurations(phaseDurations: string | null | undefined): string | null {
+    if (!phaseDurations) return null;
+    try {
+      const o = JSON.parse(phaseDurations) as Record<string, number>;
+      const parts = ["clone", "build", "push", "deploy"]
+        .filter((p) => typeof o[p] === "number" && o[p] > 0)
+        .map((p) => `${p} ${o[p].toFixed(1)}s`);
+      return parts.length > 0 ? parts.join(" · ") : null;
+    } catch {
+      return null;
+    }
+  }
+
   return (
     <div className="flex flex-col p-6 lg:flex-row lg:gap-6">
       <section className="min-w-0 flex-1 lg:max-w-sm">
@@ -78,10 +119,13 @@ export function DeploymentsTab({
               const commitSha = (d as {commitSha?: string | null}).commitSha;
               const commitMessage = (d as {commitMessage?: string | null})
                 .commitMessage;
+              const retryCount = d.retryCount ?? 0;
+              const phaseSummary = formatPhaseDurations(d.phaseDurations);
               const dateStr = new Date(d.createdAt).toLocaleString(undefined, {
                 dateStyle: "medium",
                 timeStyle: "short",
               });
+              const isFailed = d.status === "failed";
               return (
                 <li
                   key={d.id}
@@ -101,6 +145,11 @@ export function DeploymentsTab({
                         {index === 0 && (
                           <span className="inline-flex shrink-0 rounded-md border border-primary/40 bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
                             Current
+                          </span>
+                        )}
+                        {retryCount > 0 && (
+                          <span className="inline-flex shrink-0 rounded-md border border-gl-edge bg-gl-input-bg px-2 py-0.5 text-xs text-gl-text-muted" title="Retry attempt">
+                            Retry #{retryCount}
                           </span>
                         )}
                       </div>
@@ -137,6 +186,11 @@ export function DeploymentsTab({
                           </>
                         )}
                       </div>
+                      {phaseSummary && (
+                        <p className="text-xs text-gl-text-muted" title="Phase durations">
+                          {phaseSummary}
+                        </p>
+                      )}
                       {commitMessage && (
                         <p
                           className="line-clamp-2 text-xs text-gl-text-muted"
@@ -147,14 +201,25 @@ export function DeploymentsTab({
                       )}
                     </div>
                     <div
-                      className="flex shrink-0 items-center sm:pt-0.5"
+                      className="flex shrink-0 items-center gap-2 sm:pt-0.5"
                       onClick={(e) => e.stopPropagation()}
                     >
+                      {isFailed && (
+                        <button
+                          type="button"
+                          onClick={() => retryDeployment(d.id)}
+                          disabled={retryingId !== null}
+                          className="rounded-lg border border-primary/40 bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary transition hover:bg-primary/20 focus:outline-none focus:ring-2 focus:ring-primary/40 disabled:opacity-50"
+                          title="Retry this deployment"
+                        >
+                          {retryingId === d.id ? "Retrying…" : "Retry"}
+                        </button>
+                      )}
                       {index === 0 ? (
                         <span className="text-xs text-gl-text-muted">
                           Active
                         </span>
-                      ) : (
+                      ) : !isFailed ? (
                         <button
                           type="button"
                           onClick={() => rollbackTo(index)}
@@ -166,7 +231,7 @@ export function DeploymentsTab({
                             ? "Rolling back…"
                             : "Rollback"}
                         </button>
-                      )}
+                      ) : null}
                     </div>
                   </div>
                 </li>

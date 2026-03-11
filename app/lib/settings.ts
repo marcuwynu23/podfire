@@ -41,6 +41,29 @@ export async function setSetting(key: string, value: string): Promise<void> {
   });
 }
 
+/** Get SSL mode for a domain from dns_domains (letsencrypt | cloudflare). Returns null if not found or not set. */
+export async function getSslModeForDomain(domain: string | null | undefined): Promise<"letsencrypt" | "cloudflare" | null> {
+  if (!domain || !domain.trim()) return null;
+  const dnsDomains = await getSetting("dns_domains");
+  if (!dnsDomains?.trim()) return null;
+  try {
+    const parsed = JSON.parse(dnsDomains) as unknown;
+    if (!Array.isArray(parsed)) return null;
+    const row = parsed.find(
+      (item: unknown) =>
+        item &&
+        typeof item === "object" &&
+        "domain" in item &&
+        (item as { domain: string }).domain?.trim() === domain.trim()
+    ) as { domain: string; ssl?: string } | undefined;
+    if (row?.ssl === "letsencrypt") return "letsencrypt";
+    if (row?.ssl === "cloudflare") return "cloudflare";
+  } catch {
+    return null;
+  }
+  return null;
+}
+
 /** Get list of setting keys and whether each is set (for UI). Secrets are not returned. */
 export async function getSettingsStatus(): Promise<Record<string, { set: boolean }>> {
   const keys = [

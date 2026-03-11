@@ -24,6 +24,8 @@ type DeployPayload = {
   port?: number;
   hostPort?: number | null;
   replicas?: number | null;
+  cpuLimit?: string | null;
+  memoryLimit?: string | null;
   entryCommand?: string | null;
   buildCommand?: string | null;
   env?: Record<string, string> | null;
@@ -37,12 +39,15 @@ function runDeployFromJob(
   const port = payload.port ?? 80;
   const sendLog = (line: string) => send({ type: "log", deploymentId, line });
   const sendStatus = (status: string) => send({ type: "status", deploymentId, status });
+  const sendPhase = (phase: string, durationSeconds: number) =>
+    send({ type: "phase", deploymentId, phase, durationSeconds });
 
   const imageTag = getImageTag(sanitizeForDocker(serviceName), "latest");
   const tmpDir = path.join(os.tmpdir(), `dockly-agent-${payload.serviceId}-${Date.now()}`);
 
   return (async () => {
     const startTime = Date.now();
+    let phaseStart = startTime;
     try {
       sendLog("========================================");
       sendLog("  DEPLOYMENT STARTED (verbose)");
@@ -69,10 +74,12 @@ function runDeployFromJob(
       const cloneResult = runCommand(cloneCmd, { cwd: tmpDir });
       sendLog(formatOutput(cloneResult));
       if (!cloneResult.success) {
+        sendPhase("clone", (Date.now() - phaseStart) / 1000);
         sendLog("Error: git clone failed.");
         sendStatus("failed");
         return;
       }
+      sendPhase("clone", (Date.now() - phaseStart) / 1000);
       sendLog("Clone completed successfully.");
       sendLog("");
 
@@ -105,6 +112,7 @@ function runDeployFromJob(
         sendLog("");
       }
 
+      phaseStart = Date.now();
       sendLog("=== PHASE 4: BUILD DOCKER IMAGE ===");
       const buildCmd = `docker build --progress=plain -t ${imageTag} .`;
       sendLog(`Command: ${buildCmd}`);
@@ -115,18 +123,22 @@ function runDeployFromJob(
       sendLog("----------------------------------------");
       sendLog(`Build process exited with code: ${buildStream.exitCode ?? "null"}`);
       if (!buildStream.success) {
+        sendPhase("build", (Date.now() - phaseStart) / 1000);
         sendLog("Error: docker build failed.");
         sendStatus("failed");
         return;
       }
+      sendPhase("build", (Date.now() - phaseStart) / 1000);
       sendLog("Build completed successfully.");
       sendLog("");
 
       if (useLocalOnly()) {
         sendLog("=== PHASE 5: SKIP PUSH (local only) ===");
         sendLog("Using local image (no registry push).");
+        sendPhase("push", 0);
         sendLog("");
       } else {
+        phaseStart = Date.now();
         sendStatus("pushing");
         sendLog("=== PHASE 5: PUSH IMAGE TO REGISTRY ===");
         const pushCmd = `docker push ${imageTag}`;
@@ -137,28 +149,35 @@ function runDeployFromJob(
         sendLog("----------------------------------------");
         sendLog(`Push process exited with code: ${pushStream.exitCode ?? "null"}`);
         if (!pushStream.success) {
+          sendPhase("push", (Date.now() - phaseStart) / 1000);
           sendLog("Error: docker push failed.");
           sendStatus("failed");
           return;
         }
+        sendPhase("push", (Date.now() - phaseStart) / 1000);
         sendLog("Push completed successfully.");
         sendLog("");
       }
 
+      phaseStart = Date.now();
       sendStatus("deploying");
       const stack = stackName ?? sanitizeStackName(serviceName);
       const env = payload.env && typeof payload.env === "object" ? payload.env : undefined;
       const replicas = payload.replicas != null && payload.replicas >= 1 ? payload.replicas : undefined;
       const domain = typeof payload.domain === "string" ? payload.domain.trim() || undefined : undefined;
+      const cpuLimit = typeof payload.cpuLimit === "string" ? payload.cpuLimit.trim() || undefined : undefined;
+      const memoryLimit = typeof payload.memoryLimit === "string" ? payload.memoryLimit.trim() || undefined : undefined;
       sendLog("=== PHASE 6: DEPLOY STACK ===");
       sendLog(`Stack name:  ${stack}`);
       sendLog(`Image:       ${imageTag}`);
       sendLog(`Host:        ${domain ? `${sanitizeForDocker(stack)}.${domain}` : `${sanitizeForDocker(stack)}.localhost`}`);
       sendLog(`Replicas:    ${replicas ?? 1}`);
+      if (cpuLimit || memoryLimit) sendLog(`Limits:      CPU ${cpuLimit ?? "—"}, Memory ${memoryLimit ?? "—"}`);
       sendLog(`Env vars:    ${env ? Object.keys(env).join(", ") || "none" : "none"}`);
-      const yaml = generateStackYaml(stack, imageTag, port, { env, replicas, domain: payload.domain ?? undefined });
+      const yaml = generateStackYaml(stack, imageTag, port, { env, replicas, domain: payload.domain ?? undefined, cpuLimit, memoryLimit });
       sendLog("Generated stack YAML; running: docker stack deploy -c - " + stack);
       deployStack(stack, yaml);
+      sendPhase("deploy", (Date.now() - phaseStart) / 1000);
       sendLog("Stack deploy command completed.");
       sendLog("");
 
@@ -171,6 +190,7 @@ function runDeployFromJob(
       const message = err instanceof Error ? err.message : String(err);
       sendLog(`Error: ${message}`);
       if (err instanceof Error && err.stack) sendLog(err.stack);
+      sendPhase("error", (Date.now() - phaseStart) / 1000);
       sendStatus("failed");
     } finally {
       try {
@@ -224,8 +244,14 @@ function connect(): WebSocket {
 
   const ws = new WebSocket(wsUrl);
 
+  let heartbeatInterval: ReturnType<typeof setInterval> | null = null;
   ws.on("open", () => {
     ws.send(JSON.stringify({ type: "register", secret, name }));
+    heartbeatInterval = setInterval(() => {
+      if (ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ type: "heartbeat" }));
+      }
+    }, 30000);
   });
 
   ws.on("message", async (data: Buffer) => {
@@ -358,6 +384,10 @@ function connect(): WebSocket {
   });
 
   ws.on("close", () => {
+    if (heartbeatInterval) {
+      clearInterval(heartbeatInterval);
+      heartbeatInterval = null;
+    }
     console.log("[dockly-agent] Disconnected. Reconnecting in 5s...");
     setTimeout(connect, 5000);
   });

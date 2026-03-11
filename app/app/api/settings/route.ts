@@ -20,9 +20,10 @@ const ALL_KEYS = [
   "default_scm",
   "dns_domains",
   "ssl_provider",
+  "acme_email",
 ] as const;
 
-const PUBLIC_KEYS = ["dns_domains", "ssl_provider", "default_registry", "default_scm"] as const;
+const PUBLIC_KEYS = ["dns_domains", "ssl_provider", "acme_email", "default_registry", "default_scm"] as const;
 
 export async function GET() {
   const userId = await getSessionUserId();

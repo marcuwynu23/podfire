@@ -105,6 +105,7 @@ export async function POST(request: Request) {
   } catch {
     env = undefined;
   }
+  const domain = (service as { domain?: string | null }).domain ?? null;
   const job = {
     deploymentId: deployment.id,
     serviceId: service.id,
@@ -113,10 +114,12 @@ export async function POST(request: Request) {
     cloneUrl,
     serviceName: service.name,
     stackName: service.stackName ?? service.name,
-    domain: service.domain ?? null,
+    domain,
     port,
     hostPort: service.hostPort ?? null,
     replicas: service.replicas ?? 1,
+    cpuLimit: (service as { cpuLimit?: string | null }).cpuLimit ?? null,
+    memoryLimit: (service as { memoryLimit?: string | null }).memoryLimit ?? null,
     entryCommand: service.entryCommand ?? null,
     buildCommand: service.buildCommand ?? null,
     env: env ?? null,

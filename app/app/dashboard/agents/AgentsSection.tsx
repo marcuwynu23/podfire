@@ -2,10 +2,17 @@
 
 import {useState, useEffect, useCallback} from "react";
 
-type ConnectedAgent = {id: string; name: string; connectedAt: string};
+type AgentRow = {
+  keyId: string;
+  agentId: string | null;
+  name: string;
+  status: "online" | "offline" | "degraded";
+  connectedAt: string | null;
+  lastSeenAt: string | null;
+};
 
 export function AgentsSection() {
-  const [connected, setConnected] = useState<ConnectedAgent[]>([]);
+  const [agents, setAgents] = useState<AgentRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [addKey, setAddKey] = useState("");
@@ -16,28 +23,28 @@ export function AgentsSection() {
   const [removingId, setRemovingId] = useState<string | null>(null);
   const [removeError, setRemoveError] = useState("");
 
-  const fetchConnected = useCallback(async () => {
+  const fetchAgents = useCallback(async () => {
     try {
       const res = await fetch("/api/agents", {credentials: "same-origin"});
       if (res.ok) {
         const data = await res.json();
-        setConnected(data.agents ?? []);
+        setAgents(data.agents ?? []);
       }
     } catch {
-      setConnected([]);
+      setAgents([]);
     }
   }, []);
 
   useEffect(() => {
     const load = async () => {
       setLoading(true);
-      await fetchConnected();
+      await fetchAgents();
       setLoading(false);
     };
     load();
-    const t = setInterval(fetchConnected, 3000);
+    const t = setInterval(fetchAgents, 5000);
     return () => clearInterval(t);
-  }, [fetchConnected]);
+  }, [fetchAgents]);
 
   async function handleAddAgent(e: React.FormEvent) {
     e.preventDefault();
@@ -74,7 +81,7 @@ export function AgentsSection() {
     }
   }
 
-  async function handleRemove(agentId: string) {
+  async function handleDisconnect(agentId: string) {
     setRemovingId(agentId);
     setRemoveError("");
     try {
@@ -85,8 +92,8 @@ export function AgentsSection() {
         credentials: "same-origin",
       });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error ?? "Failed to remove agent");
-      await fetchConnected();
+      if (!res.ok) throw new Error(data.error ?? "Failed to disconnect agent");
+      await fetchAgents();
     } catch (err) {
       setRemoveError(err instanceof Error ? err.message : "Failed to remove agent");
     } finally {
@@ -119,9 +126,9 @@ export function AgentsSection() {
       )}
       {loading ? (
         <p className="text-sm text-gl-text-muted">Loading…</p>
-      ) : connected.length === 0 ? (
+      ) : agents.length === 0 ? (
         <p className="text-sm text-gl-text-muted">
-          No agents connected. Run the agent, copy the key it prints, then use Add Agent to confirm the key.
+          No agents added. Run the agent, copy the key it prints, then use Add Agent to confirm the key.
         </p>
       ) : (
         <div className="overflow-x-auto rounded-native-sm border border-gl-edge">
@@ -134,27 +141,43 @@ export function AgentsSection() {
               </tr>
             </thead>
             <tbody>
-              {connected.map((a) => (
+              {agents.map((a) => (
                 <tr
-                  key={a.id}
+                  key={a.keyId}
                   className="border-b border-gl-edge last:border-b-0 hover:bg-gl-hover"
                 >
                   <td className="px-4 py-3 font-medium text-gl-text">{a.name}</td>
                   <td className="px-4 py-3">
-                    <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/15 px-2.5 py-0.5 text-xs font-medium text-primary">
-                      <span className="h-1.5 w-1.5 rounded-full bg-primary" />
-                      Connected
-                    </span>
+                    {a.status === "online" ? (
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/15 px-2.5 py-0.5 text-xs font-medium text-primary">
+                        <span className="h-1.5 w-1.5 rounded-full bg-primary" aria-hidden />
+                        Online
+                      </span>
+                    ) : a.status === "degraded" ? (
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/15 px-2.5 py-0.5 text-xs font-medium text-amber-400">
+                        <span className="h-1.5 w-1.5 rounded-full bg-amber-400" aria-hidden />
+                        No heartbeat
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-gl-edge px-2.5 py-0.5 text-xs font-medium text-gl-text-muted" title={a.lastSeenAt ?? undefined}>
+                        <span className="h-1.5 w-1.5 rounded-full bg-gl-text-muted" aria-hidden />
+                        Offline{a.lastSeenAt ? ` · last seen ${new Date(a.lastSeenAt).toLocaleString()}` : ""}
+                      </span>
+                    )}
                   </td>
                   <td className="px-4 py-3 text-right">
-                    <button
-                      type="button"
-                      onClick={() => handleRemove(a.id)}
-                      disabled={removingId === a.id}
-                      className="rounded-native-sm border border-red-500/30 px-3 py-1.5 text-xs font-medium text-red-400 hover:bg-red-500/10 disabled:opacity-50"
-                    >
-                      {removingId === a.id ? "Removing…" : "Remove"}
-                    </button>
+                    {a.agentId ? (
+                      <button
+                        type="button"
+                        onClick={() => handleDisconnect(a.agentId!)}
+                        disabled={removingId === a.agentId}
+                        className="rounded-native-sm border border-red-500/30 px-3 py-1.5 text-xs font-medium text-red-400 hover:bg-red-500/10 disabled:opacity-50"
+                      >
+                        {removingId === a.agentId ? "Disconnecting…" : "Disconnect"}
+                      </button>
+                    ) : (
+                      <span className="text-xs text-gl-text-muted">—</span>
+                    )}
                   </td>
                 </tr>
               ))}

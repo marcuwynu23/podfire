@@ -44,6 +44,9 @@ export async function PATCH(
     port?: number | null;
     hostPort?: number | null;
     replicas?: number;
+    domain?: string | null;
+    cpuLimit?: string | null;
+    memoryLimit?: string | null;
     entryCommand?: string | null;
     buildCommand?: string | null;
     env?: Record<string, string> | null;
@@ -54,7 +57,7 @@ export async function PATCH(
   } catch {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
-  const { port, hostPort, replicas, entryCommand, buildCommand, env, deployMode } = body;
+  const { port, hostPort, replicas, domain, cpuLimit, memoryLimit, entryCommand, buildCommand, env, deployMode } = body;
   if (port !== undefined && (typeof port !== "number" || port < 1 || port > 65535)) {
     return NextResponse.json({ error: "port must be 1-65535" }, { status: 400 });
   }
@@ -64,10 +67,13 @@ export async function PATCH(
   if (replicas !== undefined && (typeof replicas !== "number" || replicas < 1 || replicas > 32)) {
     return NextResponse.json({ error: "replicas must be 1-32" }, { status: 400 });
   }
-  const data: { port?: number | null; hostPort?: number | null; replicas?: number; entryCommand?: string | null; buildCommand?: string | null; env?: string | null; deployMode?: string } = {};
+  const data: { port?: number | null; hostPort?: number | null; replicas?: number; domain?: string | null; cpuLimit?: string | null; memoryLimit?: string | null; entryCommand?: string | null; buildCommand?: string | null; env?: string | null; deployMode?: string } = {};
   if (port !== undefined) data.port = port ?? null;
   if (hostPort !== undefined) data.hostPort = hostPort ?? null;
   if (replicas !== undefined) data.replicas = replicas;
+  if (domain !== undefined) data.domain = typeof domain === "string" ? domain.trim() || null : null;
+  if (cpuLimit !== undefined) data.cpuLimit = typeof cpuLimit === "string" ? cpuLimit.trim() || null : null;
+  if (memoryLimit !== undefined) data.memoryLimit = typeof memoryLimit === "string" ? memoryLimit.trim() || null : null;
   if (entryCommand !== undefined) data.entryCommand = entryCommand?.trim() || null;
   if (buildCommand !== undefined) data.buildCommand = buildCommand?.trim() || null;
   if (env !== undefined) data.env = env && typeof env === "object" ? JSON.stringify(env) : null;

@@ -41,7 +41,7 @@ function listAgents() {
   const list = [];
   for (const [id, conn] of agents) {
     if (conn.ws.readyState === 1) {
-      list.push({ id: conn.id, name: conn.name, connectedAt: conn.connectedAt });
+      list.push({ id: conn.id, name: conn.name, connectedAt: conn.connectedAt, keyId: conn.keyId ?? null });
     } else {
       agents.delete(id);
     }
