@@ -4,13 +4,20 @@ import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
 import WebSocket from "ws";
-import { detectFramework } from "./lib/framework-detector";
-import { copyTemplateToRepo } from "./lib/template-loader";
-import { getImageTag, sanitizeForDocker, useLocalOnly } from "./lib/docker";
-import { generateStackYaml, deployStack, sanitizeStackName, deployTraefikStack, removeTraefikStack, isTraefikRunning } from "./lib/stack";
-import { runCommand, runCommandStream, formatOutput } from "./lib/run-command";
-import { getAvailablePort } from "./lib/available-port";
-import { runServiceDiagnostics } from "./lib/service-diagnostics";
+import {detectFramework} from "./lib/framework-detector.js";
+import {copyTemplateToRepo} from "./lib/template-loader.js";
+import {getImageTag, sanitizeForDocker, useLocalOnly} from "./lib/docker.js";
+import {
+  generateStackYaml,
+  deployStack,
+  sanitizeStackName,
+  deployTraefikStack,
+  removeTraefikStack,
+  isTraefikRunning,
+} from "./lib/stack.js";
+import {runCommand, runCommandStream, formatOutput} from "./lib/run-command.js";
+import {getAvailablePort} from "./lib/available-port.js";
+import {runServiceDiagnostics} from "./lib/service-diagnostics.js";
 
 type DeployPayload = {
   deploymentId: string;
@@ -33,17 +40,21 @@ type DeployPayload = {
 
 function runDeployFromJob(
   payload: DeployPayload,
-  send: (msg: object) => void
+  send: (msg: object) => void,
 ): Promise<void> {
-  const { deploymentId, cloneUrl, branch, serviceName, stackName } = payload;
+  const {deploymentId, cloneUrl, branch, serviceName, stackName} = payload;
   const port = payload.port ?? 80;
-  const sendLog = (line: string) => send({ type: "log", deploymentId, line });
-  const sendStatus = (status: string) => send({ type: "status", deploymentId, status });
+  const sendLog = (line: string) => send({type: "log", deploymentId, line});
+  const sendStatus = (status: string) =>
+    send({type: "status", deploymentId, status});
   const sendPhase = (phase: string, durationSeconds: number) =>
-    send({ type: "phase", deploymentId, phase, durationSeconds });
+    send({type: "phase", deploymentId, phase, durationSeconds});
 
   const imageTag = getImageTag(sanitizeForDocker(serviceName), "latest");
-  const tmpDir = path.join(os.tmpdir(), `dockly-agent-${payload.serviceId}-${Date.now()}`);
+  const tmpDir = path.join(
+    os.tmpdir(),
+    `podfire-agent-${payload.serviceId}-${Date.now()}`,
+  );
 
   return (async () => {
     const startTime = Date.now();
@@ -54,7 +65,9 @@ function runDeployFromJob(
       sendLog("========================================");
       sendLog(`  deploymentId: ${deploymentId}`);
       sendLog(`  serviceName:  ${serviceName}`);
-      sendLog(`  stackName:    ${stackName ?? "(will use sanitized service name)"}`);
+      sendLog(
+        `  stackName:    ${stackName ?? "(will use sanitized service name)"}`,
+      );
       sendLog(`  branch:       ${branch}`);
       sendLog(`  cloneUrl:     ${cloneUrl}`);
       sendLog(`  port:         ${port}`);
@@ -66,12 +79,12 @@ function runDeployFromJob(
       sendLog("");
       sendLog("=== PHASE 1: CLONE REPOSITORY ===");
       sendLog(`Creating directory: ${tmpDir}`);
-      fs.mkdirSync(tmpDir, { recursive: true });
+      fs.mkdirSync(tmpDir, {recursive: true});
       const cloneCmd = `git clone --depth 1 --branch "${branch}" "${cloneUrl}" repo`;
       sendLog(`Command: ${cloneCmd}`);
       sendLog(`Cwd:     ${tmpDir}`);
       sendLog("Running git clone...");
-      const cloneResult = runCommand(cloneCmd, { cwd: tmpDir });
+      const cloneResult = runCommand(cloneCmd, {cwd: tmpDir});
       sendLog(formatOutput(cloneResult));
       if (!cloneResult.success) {
         sendPhase("clone", (Date.now() - phaseStart) / 1000);
@@ -98,12 +111,16 @@ function runDeployFromJob(
 
       if (framework !== "custom") {
         sendLog("=== PHASE 3: COPY DOCKER TEMPLATE ===");
-        sendLog(`Applying ${framework} template (buildCommand: ${payload.buildCommand ?? "default"}, entryCommand: ${payload.entryCommand ?? "default"})`);
+        sendLog(
+          `Applying ${framework} template (buildCommand: ${payload.buildCommand ?? "default"}, entryCommand: ${payload.entryCommand ?? "default"})`,
+        );
         copyTemplateToRepo(repoPath, framework, {
           buildCommand: payload.buildCommand ?? undefined,
           entryCommand: payload.entryCommand ?? undefined,
         });
-        const copied = fs.readdirSync(repoPath).filter((f) => f === "Dockerfile" || f === ".dockerignore");
+        const copied = fs
+          .readdirSync(repoPath)
+          .filter((f) => f === "Dockerfile" || f === ".dockerignore");
         sendLog(`Copied: ${copied.join(", ") || "Dockerfile"}`);
         sendLog("");
       } else {
@@ -119,9 +136,15 @@ function runDeployFromJob(
       sendLog(`Cwd:     ${repoPath}`);
       sendLog("Streaming build output (--progress=plain):");
       sendLog("----------------------------------------");
-      const buildStream = await runCommandStream(buildCmd, (line: string) => sendLog(line), { cwd: repoPath });
+      const buildStream = await runCommandStream(
+        buildCmd,
+        (line: string) => sendLog(line),
+        {cwd: repoPath},
+      );
       sendLog("----------------------------------------");
-      sendLog(`Build process exited with code: ${buildStream.exitCode ?? "null"}`);
+      sendLog(
+        `Build process exited with code: ${buildStream.exitCode ?? "null"}`,
+      );
       if (!buildStream.success) {
         sendPhase("build", (Date.now() - phaseStart) / 1000);
         sendLog("Error: docker build failed.");
@@ -145,9 +168,13 @@ function runDeployFromJob(
         sendLog(`Command: ${pushCmd}`);
         sendLog("Streaming push output:");
         sendLog("----------------------------------------");
-        const pushStream = await runCommandStream(pushCmd, (line: string) => sendLog(line));
+        const pushStream = await runCommandStream(pushCmd, (line: string) =>
+          sendLog(line),
+        );
         sendLog("----------------------------------------");
-        sendLog(`Push process exited with code: ${pushStream.exitCode ?? "null"}`);
+        sendLog(
+          `Push process exited with code: ${pushStream.exitCode ?? "null"}`,
+        );
         if (!pushStream.success) {
           sendPhase("push", (Date.now() - phaseStart) / 1000);
           sendLog("Error: docker push failed.");
@@ -162,20 +189,50 @@ function runDeployFromJob(
       phaseStart = Date.now();
       sendStatus("deploying");
       const stack = stackName ?? sanitizeStackName(serviceName);
-      const env = payload.env && typeof payload.env === "object" ? payload.env : undefined;
-      const replicas = payload.replicas != null && payload.replicas >= 1 ? payload.replicas : undefined;
-      const domain = typeof payload.domain === "string" ? payload.domain.trim() || undefined : undefined;
-      const cpuLimit = typeof payload.cpuLimit === "string" ? payload.cpuLimit.trim() || undefined : undefined;
-      const memoryLimit = typeof payload.memoryLimit === "string" ? payload.memoryLimit.trim() || undefined : undefined;
+      const env =
+        payload.env && typeof payload.env === "object"
+          ? payload.env
+          : undefined;
+      const replicas =
+        payload.replicas != null && payload.replicas >= 1
+          ? payload.replicas
+          : undefined;
+      const domain =
+        typeof payload.domain === "string"
+          ? payload.domain.trim() || undefined
+          : undefined;
+      const cpuLimit =
+        typeof payload.cpuLimit === "string"
+          ? payload.cpuLimit.trim() || undefined
+          : undefined;
+      const memoryLimit =
+        typeof payload.memoryLimit === "string"
+          ? payload.memoryLimit.trim() || undefined
+          : undefined;
       sendLog("=== PHASE 6: DEPLOY STACK ===");
       sendLog(`Stack name:  ${stack}`);
       sendLog(`Image:       ${imageTag}`);
-      sendLog(`Host:        ${domain ? `${sanitizeForDocker(stack)}.${domain}` : `${sanitizeForDocker(stack)}.localhost`}`);
+      sendLog(
+        `Host:        ${domain ? `${sanitizeForDocker(stack)}.${domain}` : `${sanitizeForDocker(stack)}.localhost`}`,
+      );
       sendLog(`Replicas:    ${replicas ?? 1}`);
-      if (cpuLimit || memoryLimit) sendLog(`Limits:      CPU ${cpuLimit ?? "—"}, Memory ${memoryLimit ?? "—"}`);
-      sendLog(`Env vars:    ${env ? Object.keys(env).join(", ") || "none" : "none"}`);
-      const yaml = generateStackYaml(stack, imageTag, port, { env, replicas, domain: payload.domain ?? undefined, cpuLimit, memoryLimit });
-      sendLog("Generated stack YAML; running: docker stack deploy -c - " + stack);
+      if (cpuLimit || memoryLimit)
+        sendLog(
+          `Limits:      CPU ${cpuLimit ?? "—"}, Memory ${memoryLimit ?? "—"}`,
+        );
+      sendLog(
+        `Env vars:    ${env ? Object.keys(env).join(", ") || "none" : "none"}`,
+      );
+      const yaml = generateStackYaml(stack, imageTag, port, {
+        env,
+        replicas,
+        domain: payload.domain ?? undefined,
+        cpuLimit,
+        memoryLimit,
+      });
+      sendLog(
+        "Generated stack YAML; running: docker stack deploy -c - " + stack,
+      );
       deployStack(stack, yaml);
       sendPhase("deploy", (Date.now() - phaseStart) / 1000);
       sendLog("Stack deploy command completed.");
@@ -196,10 +253,12 @@ function runDeployFromJob(
       try {
         sendLog("");
         sendLog("Cleaning up temporary directory: " + tmpDir);
-        fs.rmSync(tmpDir, { recursive: true, force: true });
+        fs.rmSync(tmpDir, {recursive: true, force: true});
         sendLog("Cleanup done.");
       } catch (e) {
-        sendLog("Cleanup warning: " + (e instanceof Error ? e.message : String(e)));
+        sendLog(
+          "Cleanup warning: " + (e instanceof Error ? e.message : String(e)),
+        );
       }
     }
   })();
@@ -207,11 +266,11 @@ function runDeployFromJob(
 
 const AGENT_KEY_FILE = path.join(process.cwd(), ".agent-key");
 
-function getOrCreateAgentSecret(): { secret: string; isNew: boolean } {
+function getOrCreateAgentSecret(): {secret: string; isNew: boolean} {
   try {
     if (fs.existsSync(AGENT_KEY_FILE)) {
       const existing = fs.readFileSync(AGENT_KEY_FILE, "utf-8").trim();
-      if (existing.length >= 16) return { secret: existing, isNew: false };
+      if (existing.length >= 16) return {secret: existing, isNew: false};
     }
   } catch {
     // ignore read errors, generate new
@@ -221,35 +280,42 @@ function getOrCreateAgentSecret(): { secret: string; isNew: boolean } {
     fs.writeFileSync(AGENT_KEY_FILE, secret, "utf-8");
     fs.chmodSync(AGENT_KEY_FILE, 0o600);
   } catch (err) {
-    console.error("[dockly-agent] Could not write .agent-key:", (err as Error).message);
+    console.error(
+      "[podfire-agent] Could not write .agent-key:",
+      (err as Error).message,
+    );
   }
-  return { secret, isNew: true };
+  return {secret, isNew: true};
 }
 
 function connect(): WebSocket {
-  const { secret, isNew: isNewKey } = getOrCreateAgentSecret();
+  const {secret, isNew: isNewKey} = getOrCreateAgentSecret();
 
   const gatewayUrl = process.env.AGENT_GATEWAY_URL ?? "http://localhost:3001";
   const wsUrl = gatewayUrl.replace(/^http/, "ws") + "/ws/agent";
-  const name = process.env.AGENT_NAME ?? "dockly-agent";
+  const name = process.env.AGENT_NAME ?? "podfire-agent";
 
   if (isNewKey) {
-    console.log("[dockly-agent] Generated agent key. You must confirm it before connecting.");
-    console.log("[dockly-agent] Key:", secret);
-    console.log("[dockly-agent] Add this key in the app (Dashboard → Agents → Add Agent), then run the agent again: npm run dev");
+    console.log(
+      "[podfire-agent] Generated agent key. You must confirm it before connecting.",
+    );
+    console.log("[podfire-agent] Key:", secret);
+    console.log(
+      "[podfire-agent] Add this key in the app (Dashboard → Agents → Add Agent), then run the agent again: npm run dev",
+    );
     process.exit(0);
   }
 
-  console.log("[dockly-agent] Connecting to", wsUrl, "as", name);
+  console.log("[podfire-agent] Connecting to", wsUrl, "as", name);
 
   const ws = new WebSocket(wsUrl);
 
   let heartbeatInterval: ReturnType<typeof setInterval> | null = null;
   ws.on("open", () => {
-    ws.send(JSON.stringify({ type: "register", secret, name }));
+    ws.send(JSON.stringify({type: "register", secret, name}));
     heartbeatInterval = setInterval(() => {
       if (ws.readyState === WebSocket.OPEN) {
-        ws.send(JSON.stringify({ type: "heartbeat" }));
+        ws.send(JSON.stringify({type: "heartbeat"}));
       }
     }, 30000);
   });
@@ -258,128 +324,250 @@ function connect(): WebSocket {
     try {
       const msg = JSON.parse(data.toString()) as Record<string, unknown>;
       if (msg.type === "register-failed") {
-        const err = typeof msg.error === "string" ? msg.error : "Registration rejected";
-        console.error("[dockly-agent]", err);
+        const err =
+          typeof msg.error === "string" ? msg.error : "Registration rejected";
+        console.error("[podfire-agent]", err);
         ws.close();
         return;
       }
       if (msg.type === "registered") {
-        console.log("[dockly-agent] Registered with id:", msg.agentId);
+        console.log("[podfire-agent] Registered with id:", msg.agentId);
       } else if (msg.type === "deploy") {
         const payload = msg as unknown as DeployPayload;
-        console.log("[dockly-agent] Received deploy job", payload.deploymentId);
+        console.log(
+          "[podfire-agent] Received deploy job",
+          payload.deploymentId,
+        );
         const send = (obj: object) => {
           if (ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(obj));
         };
         runDeployFromJob(payload, send).then(() => {
-          console.log("[dockly-agent] Finished deployment", payload.deploymentId);
+          console.log(
+            "[podfire-agent] Finished deployment",
+            payload.deploymentId,
+          );
         });
+      } else if (msg.type === "update-stack-labels") {
+        const p = msg as unknown as {
+          stackName?: string;
+          serviceName?: string;
+          port?: number;
+          domain?: string | null;
+          replicas?: number;
+          env?: Record<string, string> | null;
+        };
+        const stackName = typeof p.stackName === "string" ? p.stackName.trim() : "";
+        const serviceName = typeof p.serviceName === "string" ? p.serviceName.trim() : "";
+        if (!stackName || !serviceName) {
+          console.error("[podfire-agent] update-stack-labels: stackName and serviceName required");
+          return;
+        }
+        const port = typeof p.port === "number" && p.port >= 1 && p.port <= 65535 ? p.port : 80;
+        const domain = typeof p.domain === "string" ? p.domain.trim() || undefined : undefined;
+        const replicas = typeof p.replicas === "number" && p.replicas >= 1 && p.replicas <= 32 ? p.replicas : undefined;
+        const env = p.env && typeof p.env === "object" ? p.env : undefined;
+        try {
+          const imageTag = getImageTag(sanitizeForDocker(serviceName), "latest");
+          const yaml = generateStackYaml(stackName, imageTag, port, {
+            env,
+            replicas,
+            domain: domain ?? null,
+          });
+          deployStack(stackName, yaml);
+          console.log("[podfire-agent] Stack labels updated for", stackName, domain ? `(Host: ${sanitizeForDocker(stackName)}.${domain})` : "");
+        } catch (err) {
+          console.error("[podfire-agent] update-stack-labels error:", err);
+        }
       } else if (msg.type === "deploy-traefik") {
         const yaml = typeof msg.yaml === "string" ? msg.yaml : "";
-        console.log("[dockly-agent] Deploy Traefik");
+        console.log("[podfire-agent] Deploy Traefik");
         try {
           deployTraefikStack(yaml);
-          console.log("[dockly-agent] Traefik deployed");
+          console.log("[podfire-agent] Traefik deployed");
         } catch (err) {
-          console.error("[dockly-agent] Traefik deploy error:", err);
+          console.error("[podfire-agent] Traefik deploy error:", err);
         }
       } else if (msg.type === "remove-traefik") {
-        console.log("[dockly-agent] Remove Traefik");
+        console.log("[podfire-agent] Remove Traefik");
         try {
           removeTraefikStack();
-          console.log("[dockly-agent] Traefik removed");
+          console.log("[podfire-agent] Traefik removed");
         } catch (err) {
-          console.error("[dockly-agent] Traefik remove error:", err);
+          console.error("[podfire-agent] Traefik remove error:", err);
         }
       } else if (msg.type === "get-traefik-status" && msg.requestId != null) {
         const requestId = msg.requestId as string;
         const running = isTraefikRunning();
         if (ws.readyState === WebSocket.OPEN) {
-          ws.send(JSON.stringify({ type: "traefik-status", requestId, running }));
+          ws.send(JSON.stringify({type: "traefik-status", requestId, running}));
         }
       } else if (msg.type === "get-available-port" && msg.requestId != null) {
         const requestId = msg.requestId as string;
         getAvailablePort()
           .then((port: number) => {
             if (ws.readyState === WebSocket.OPEN) {
-              ws.send(JSON.stringify({ type: "available-port", requestId, port }));
+              ws.send(
+                JSON.stringify({type: "available-port", requestId, port}),
+              );
             }
           })
           .catch((_err: unknown) => {
             if (ws.readyState === WebSocket.OPEN) {
-              ws.send(JSON.stringify({ type: "available-port", requestId, port: 0 }));
+              ws.send(
+                JSON.stringify({type: "available-port", requestId, port: 0}),
+              );
             }
           });
-      } else if (msg.type === "get-service-logs" && msg.requestId != null && typeof msg.stackName === "string") {
+      } else if (
+        msg.type === "get-service-logs" &&
+        msg.requestId != null &&
+        typeof msg.stackName === "string"
+      ) {
         const requestId = msg.requestId as string;
         const stackName = String(msg.stackName).trim();
         const safe = sanitizeForDocker(stackName);
         const serviceName = `${safe}_app`;
-        const result = runCommand(`docker service logs ${serviceName} --tail 1000 2>&1`);
-        const logs = [result.stdout, result.stderr].filter(Boolean).join("\n").trim() || "(no logs)";
+        const result = runCommand(
+          `docker service logs ${serviceName} --tail 1000 2>&1`,
+        );
+        const logs =
+          [result.stdout, result.stderr].filter(Boolean).join("\n").trim() ||
+          "(no logs)";
         if (ws.readyState === WebSocket.OPEN) {
-          ws.send(JSON.stringify({ type: "service-logs", requestId, logs }));
+          ws.send(JSON.stringify({type: "service-logs", requestId, logs}));
         }
-      } else if (msg.type === "get-service-status" && msg.requestId != null && typeof msg.stackName === "string") {
+      } else if (
+        msg.type === "get-service-status" &&
+        msg.requestId != null &&
+        typeof msg.stackName === "string"
+      ) {
         const requestId = msg.requestId as string;
         const stackName = String(msg.stackName).trim();
         const safe = sanitizeForDocker(stackName);
         const serviceName = `${safe}_app`;
-        const result = runCommand(`docker service ps ${serviceName} --no-trunc 2>&1`);
+        const result = runCommand(
+          `docker service ps ${serviceName} --no-trunc 2>&1`,
+        );
         const out = [result.stdout, result.stderr].filter(Boolean).join("\n");
-        const notFound = !result.success && (out.includes("nothing found") || out.includes("No such service"));
+        const notFound =
+          !result.success &&
+          (out.includes("nothing found") || out.includes("No such service"));
         const running = result.success && out.includes("Running");
         if (ws.readyState === WebSocket.OPEN) {
-          ws.send(JSON.stringify({ type: "service-status", requestId, running: !notFound && running }));
+          ws.send(
+            JSON.stringify({
+              type: "service-status",
+              requestId,
+              running: !notFound && running,
+            }),
+          );
         }
-      } else if (msg.type === "diagnose-service" && msg.requestId != null && typeof msg.stackName === "string") {
+      } else if (
+        msg.type === "diagnose-service" &&
+        msg.requestId != null &&
+        typeof msg.stackName === "string"
+      ) {
         const requestId = msg.requestId as string;
         const stackName = String(msg.stackName).trim();
-        const port = typeof msg.port === "number" && msg.port >= 1 && msg.port <= 65535 ? msg.port : 3000;
+        const port =
+          typeof msg.port === "number" && msg.port >= 1 && msg.port <= 65535
+            ? msg.port
+            : 3000;
         const domain = typeof msg.domain === "string" ? msg.domain : undefined;
         try {
-          const diagnostics = await runServiceDiagnostics(stackName, port, domain);
+          const diagnostics = await runServiceDiagnostics(
+            stackName,
+            port,
+            domain,
+          );
           if (ws.readyState === WebSocket.OPEN) {
-            ws.send(JSON.stringify({ type: "service-diagnostics", requestId, diagnostics }));
+            ws.send(
+              JSON.stringify({
+                type: "service-diagnostics",
+                requestId,
+                diagnostics,
+              }),
+            );
           }
         } catch (err) {
           const message = err instanceof Error ? err.message : String(err);
           if (ws.readyState === WebSocket.OPEN) {
-            ws.send(JSON.stringify({ type: "service-diagnostics", requestId, error: message }));
+            ws.send(
+              JSON.stringify({
+                type: "service-diagnostics",
+                requestId,
+                error: message,
+              }),
+            );
           }
         }
-      } else if (msg.type === "service-rollback" && msg.requestId != null && typeof msg.stackName === "string") {
+      } else if (
+        msg.type === "service-rollback" &&
+        msg.requestId != null &&
+        typeof msg.stackName === "string"
+      ) {
         const requestId = msg.requestId as string;
         const stackName = String(msg.stackName).trim();
-        const steps = typeof msg.steps === "number" ? Math.min(10, Math.max(1, Math.floor(msg.steps))) : 1;
+        const steps =
+          typeof msg.steps === "number"
+            ? Math.min(10, Math.max(1, Math.floor(msg.steps)))
+            : 1;
         const safe = sanitizeForDocker(stackName);
         const serviceName = `${safe}_app`;
         let lastSuccess = true;
         const outputs: string[] = [];
         for (let i = 0; i < steps; i++) {
-          const result = runCommand(`docker service rollback ${serviceName} 2>&1`);
-          const out = [result.stdout, result.stderr].filter(Boolean).join("\n").trim();
+          const result = runCommand(
+            `docker service rollback ${serviceName} 2>&1`,
+          );
+          const out = [result.stdout, result.stderr]
+            .filter(Boolean)
+            .join("\n")
+            .trim();
           if (out) outputs.push(out);
           if (!result.success) lastSuccess = false;
         }
         const output = outputs.join("\n\n").trim() || "(no output)";
         if (ws.readyState === WebSocket.OPEN) {
-          ws.send(JSON.stringify({ type: "service-rollback-done", requestId, success: lastSuccess, output }));
+          ws.send(
+            JSON.stringify({
+              type: "service-rollback-done",
+              requestId,
+              success: lastSuccess,
+              output,
+            }),
+          );
         }
-      } else if (msg.type === "service-scale" && msg.requestId != null && typeof msg.stackName === "string" && typeof msg.replicas === "number") {
+      } else if (
+        msg.type === "service-scale" &&
+        msg.requestId != null &&
+        typeof msg.stackName === "string" &&
+        typeof msg.replicas === "number"
+      ) {
         const requestId = msg.requestId as string;
         const stackName = String(msg.stackName).trim();
         const replicas = Math.min(32, Math.max(1, Math.floor(msg.replicas)));
         const safe = sanitizeForDocker(stackName);
         const serviceName = `${safe}_app`;
-        const result = runCommand(`docker service scale ${serviceName}=${replicas} 2>&1`);
-        const output = [result.stdout, result.stderr].filter(Boolean).join("\n").trim() || "(no output)";
+        const result = runCommand(
+          `docker service scale ${serviceName}=${replicas} 2>&1`,
+        );
+        const output =
+          [result.stdout, result.stderr].filter(Boolean).join("\n").trim() ||
+          "(no output)";
         if (ws.readyState === WebSocket.OPEN) {
-          ws.send(JSON.stringify({ type: "service-scale-done", requestId, success: result.success, output }));
+          ws.send(
+            JSON.stringify({
+              type: "service-scale-done",
+              requestId,
+              success: result.success,
+              output,
+            }),
+          );
         }
       }
     } catch (err) {
-      console.error("[dockly-agent] Message error:", err);
+      console.error("[podfire-agent] Message error:", err);
     }
   });
 
@@ -388,16 +576,16 @@ function connect(): WebSocket {
       clearInterval(heartbeatInterval);
       heartbeatInterval = null;
     }
-    console.log("[dockly-agent] Disconnected. Reconnecting in 5s...");
+    console.log("[podfire-agent] Disconnected. Reconnecting in 5s...");
     setTimeout(connect, 5000);
   });
 
   ws.on("error", (err) => {
-    console.error("[dockly-agent] WebSocket error:", err.message);
+    console.error("[podfire-agent] WebSocket error:", err.message);
   });
 
   return ws;
 }
 
-console.log("[dockly-agent] Started. Register with the app via WebSocket.");
+console.log("[podfire-agent] Started. Register with the app via WebSocket.");
 connect();

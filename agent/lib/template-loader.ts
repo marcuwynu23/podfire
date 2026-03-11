@@ -1,6 +1,6 @@
 import * as fs from "fs";
 import * as path from "path";
-import type { Framework } from "./framework-detector";
+import type { Framework } from "./framework-detector.js";
 
 const TEMPLATES_DIR = path.join(process.cwd(), "docker-templates");
 const TEMPLATE_MAP: Record<Exclude<Framework, "custom">, string> = {
