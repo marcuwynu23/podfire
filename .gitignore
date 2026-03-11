@@ -76,3 +76,6 @@ temp/
 .debug/
 
 # Optional: keep .env.example tracked (already excluded above via !.env.example)
+
+
+*.exe

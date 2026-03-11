@@ -8,7 +8,7 @@ Tracked ideas for making PodFire more robust, scalable, and user-friendly. Use t
 
 ## Agent
 
-- [ ] **Convert agent to Go** — Rewrite the deploy agent in Go for a single binary, lower memory footprint, and better performance under load. Improves robustness and deployment on resource-constrained nodes.
+- [x] **Convert agent to Go** — Rewrite the deploy agent in Go for a single binary, lower memory footprint, and better performance under load. Improves robustness and deployment on resource-constrained nodes. See `agent-go/`.
 - [x] **Agent health checks** — Periodic heartbeat and readiness checks from dashboard; mark agents offline when unresponsive.
 - [x] **Agent resource limits** — Configurable CPU/memory caps per agent or per job to avoid runaway builds.
 - [x] **Parallel deploy jobs** — Allow multiple deploy jobs per agent (queue or worker pool) to reduce wait times.
@@ -73,8 +73,8 @@ Tracked ideas for making PodFire more robust, scalable, and user-friendly. Use t
 
 - [ ] **Structured logging** — JSON logs with levels and correlation IDs for easier aggregation (e.g. Loki, CloudWatch).
 - [ ] **Database backups** — Documented or automated backup/restore for Prisma/DB used by the app.
-- [ ] **Health endpoint** — `/health` or `/ready` for the dashboard and agent for load balancers and k8s probes.
-- [ ] **Graceful shutdown** — Agents and app drain in-flight work and close connections cleanly on SIGTERM.
+- [x] **Health endpoint** — `/health` or `/ready` for the dashboard and agent for load balancers and k8s probes.
+- [x] **Graceful shutdown** — Agents and app drain in-flight work and close connections cleanly on SIGTERM.
 
 ---
 
