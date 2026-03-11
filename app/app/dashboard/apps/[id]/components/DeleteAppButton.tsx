@@ -53,7 +53,7 @@ export function DeleteAppButton({
           value={confirmName}
           onChange={(e) => setConfirmName(e.target.value)}
           placeholder={appName}
-          className="mt-3 w-full rounded-lg border border-white/20 bg-black/30 px-3 py-2 text-sm text-white placeholder:text-zinc-500 focus:border-red-500/50 focus:outline-none focus:ring-1 focus:ring-red-500/50"
+          className="mt-3 w-full rounded-lg border border-gl-edge bg-gl-input-bg px-3 py-2 text-sm text-gl-text placeholder-gl-text-muted focus:border-red-500/50 focus:outline-none focus:ring-1 focus:ring-red-500/50"
           autoFocus
           disabled={loading}
         />
@@ -70,7 +70,7 @@ export function DeleteAppButton({
             type="button"
             onClick={handleCancel}
             disabled={loading}
-            className="rounded-lg border border-white/[0.06] px-3 py-1.5 text-sm text-zinc-300 hover:bg-white/[0.06]"
+            className="rounded-lg border border-gl-edge px-3 py-1.5 text-sm text-gl-text-muted hover:bg-gl-hover"
           >
             Cancel
           </button>

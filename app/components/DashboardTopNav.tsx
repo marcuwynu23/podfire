@@ -1,10 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useRef, useEffect } from "react";
-import { ThemeSwitch } from "./ThemeProvider";
+import {useState, useRef, useEffect} from "react";
+import {ThemeSwitch} from "./ThemeProvider";
 
-export function DashboardTopNav({ displayName }: { displayName: string | null }) {
+export function DashboardTopNav({displayName}: {displayName: string | null}) {
   const [profileOpen, setProfileOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -26,8 +26,12 @@ export function DashboardTopNav({ displayName }: { displayName: string | null })
         >
           <img src="/favicon.svg" alt="" className="h-8 w-8" aria-hidden />
           <span className="flex flex-col">
-            <span className="text-fire text-base font-semibold leading-tight">PodFire</span>
-            <span className="text-[10px] font-normal text-[color:var(--gl-text-muted)] leading-tight">Deployment platform</span>
+            <span className="text-fire text-base font-semibold leading-tight">
+              PodFire
+            </span>
+            <span className="text-[10px] font-normal text-[color:var(--gl-text-muted)] leading-tight">
+              Deployment platform
+            </span>
           </span>
         </Link>
 
@@ -43,7 +47,7 @@ export function DashboardTopNav({ displayName }: { displayName: string | null })
             <button
               type="button"
               onClick={() => setProfileOpen((o) => !o)}
-              className="flex items-center gap-1.5 rounded-lg border border-[color:var(--gl-edge)] bg-white/[0.06] px-2.5 py-1.5 shadow-sm transition hover:border-primary/20 hover:bg-primary/10"
+              className="flex items-center gap-1.5 rounded-lg border border-gl-edge bg-gl-input-bg px-2.5 py-1.5 shadow-sm transition hover:border-primary/20 hover:bg-primary/10"
               aria-expanded={profileOpen}
               aria-haspopup="true"
             >
@@ -84,7 +88,9 @@ export function DashboardTopNav({ displayName }: { displayName: string | null })
                   <p className="truncate text-sm font-medium text-[color:var(--gl-text)]">
                     {displayName ?? "Account"}
                   </p>
-                  <p className="mt-0.5 text-xs text-[color:var(--gl-text-muted)]">Signed in with GitHub</p>
+                  <p className="mt-0.5 text-xs text-[color:var(--gl-text-muted)]">
+                    Signed in with GitHub
+                  </p>
                 </div>
                 <form action="/api/github/logout" method="post" className="p-2">
                   <button

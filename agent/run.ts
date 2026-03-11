@@ -20,6 +20,7 @@ type DeployPayload = {
   cloneUrl: string;
   serviceName: string;
   stackName: string;
+  domain?: string | null;
   port?: number;
   hostPort?: number | null;
   replicas?: number | null;
@@ -148,12 +149,14 @@ function runDeployFromJob(
       const stack = stackName ?? sanitizeStackName(serviceName);
       const env = payload.env && typeof payload.env === "object" ? payload.env : undefined;
       const replicas = payload.replicas != null && payload.replicas >= 1 ? payload.replicas : undefined;
+      const domain = typeof payload.domain === "string" ? payload.domain.trim() || undefined : undefined;
       sendLog("=== PHASE 6: DEPLOY STACK ===");
       sendLog(`Stack name:  ${stack}`);
       sendLog(`Image:       ${imageTag}`);
+      sendLog(`Host:        ${domain ? `${sanitizeForDocker(stack)}.${domain}` : `${sanitizeForDocker(stack)}.localhost`}`);
       sendLog(`Replicas:    ${replicas ?? 1}`);
       sendLog(`Env vars:    ${env ? Object.keys(env).join(", ") || "none" : "none"}`);
-      const yaml = generateStackYaml(stack, imageTag, port, { env, replicas });
+      const yaml = generateStackYaml(stack, imageTag, port, { env, replicas, domain: payload.domain ?? undefined });
       sendLog("Generated stack YAML; running: docker stack deploy -c - " + stack);
       deployStack(stack, yaml);
       sendLog("Stack deploy command completed.");
@@ -307,8 +310,9 @@ function connect(): WebSocket {
         const requestId = msg.requestId as string;
         const stackName = String(msg.stackName).trim();
         const port = typeof msg.port === "number" && msg.port >= 1 && msg.port <= 65535 ? msg.port : 3000;
+        const domain = typeof msg.domain === "string" ? msg.domain : undefined;
         try {
-          const diagnostics = await runServiceDiagnostics(stackName, port);
+          const diagnostics = await runServiceDiagnostics(stackName, port, domain);
           if (ws.readyState === WebSocket.OPEN) {
             ws.send(JSON.stringify({ type: "service-diagnostics", requestId, diagnostics }));
           }

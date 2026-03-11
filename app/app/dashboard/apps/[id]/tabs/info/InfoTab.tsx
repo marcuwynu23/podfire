@@ -9,37 +9,37 @@ type Props = {
 export function InfoTab({ repoUrl, branch, stackName, currentReplicas, appUrl }: Props) {
   return (
     <div className="p-6">
-      <h2 className="text-base font-semibold text-white">Information</h2>
-      <p className="mt-0.5 text-sm text-zinc-400">
+      <h2 className="text-base font-semibold text-gl-text">Information</h2>
+      <p className="mt-0.5 text-sm text-gl-text-muted">
         Repository and runtime details for this app.
       </p>
       <dl className="mt-6 grid gap-4 sm:grid-cols-2">
         <div>
-          <dt className="text-xs font-medium uppercase tracking-wider text-zinc-500">
+          <dt className="text-xs font-medium uppercase tracking-wider text-gl-text-muted">
             Repository
           </dt>
-          <dd className="mt-1 font-mono text-sm text-zinc-300 break-all">{repoUrl}</dd>
+          <dd className="mt-1 font-mono text-sm text-gl-text-muted break-all">{repoUrl}</dd>
         </div>
         <div>
-          <dt className="text-xs font-medium uppercase tracking-wider text-zinc-500">
+          <dt className="text-xs font-medium uppercase tracking-wider text-gl-text-muted">
             Branch
           </dt>
-          <dd className="mt-1 font-mono text-sm text-zinc-300">{branch}</dd>
+          <dd className="mt-1 font-mono text-sm text-gl-text-muted">{branch}</dd>
         </div>
         <div>
-          <dt className="text-xs font-medium uppercase tracking-wider text-zinc-500">
+          <dt className="text-xs font-medium uppercase tracking-wider text-gl-text-muted">
             Stack name
           </dt>
-          <dd className="mt-1 font-mono text-sm text-zinc-300">{stackName ?? "—"}</dd>
+          <dd className="mt-1 font-mono text-sm text-gl-text-muted">{stackName ?? "—"}</dd>
         </div>
         <div>
-          <dt className="text-xs font-medium uppercase tracking-wider text-zinc-500">
+          <dt className="text-xs font-medium uppercase tracking-wider text-gl-text-muted">
             Scale (replicas)
           </dt>
-          <dd className="mt-1 font-mono text-sm text-zinc-300">{currentReplicas}</dd>
+          <dd className="mt-1 font-mono text-sm text-gl-text-muted">{currentReplicas}</dd>
         </div>
         <div className="sm:col-span-2">
-          <dt className="text-xs font-medium uppercase tracking-wider text-zinc-500">
+          <dt className="text-xs font-medium uppercase tracking-wider text-gl-text-muted">
             App URL
           </dt>
           <dd className="mt-1">

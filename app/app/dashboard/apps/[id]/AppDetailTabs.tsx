@@ -35,7 +35,8 @@ export function AppDetailTabs({
   const serverStatus = latestDeployment?.status ?? "—";
   const [polledStatus, setPolledStatus] = useState<string | null>(null);
   const status = polledStatus ?? serverStatus;
-  const appUrl = `http://${service.stackName ?? service.name}.localhost`;
+  const baseHost = (service.stackName ?? service.name).toLowerCase().replace(/[^a-z0-9-]/g, "-");
+  const appUrl = `http://${baseHost}${service.domain ? `.${service.domain}` : ".localhost"}`;
   const currentReplicas = service.replicas ?? 1;
 
   const [replicas, setReplicas] = useState(String(currentReplicas));
@@ -130,24 +131,24 @@ export function AppDetailTabs({
 
   return (
     <div className="w-full space-y-6">
-      <div className="rounded-native border border-white/[0.06] bg-gl-card shadow-sm">
-        <div className="flex flex-wrap items-start justify-between gap-4 border-b border-white/[0.06] p-6">
+      <div className="rounded-native border border-gl-edge bg-gl-card shadow-sm">
+        <div className="flex flex-wrap items-start justify-between gap-4 border-b border-gl-edge p-6">
           <div>
             <Link
               href="/dashboard/apps"
-              className="text-sm text-zinc-500 transition hover:text-white"
+              className="text-sm text-gl-text-muted transition hover:text-gl-text"
             >
               ← Back to Apps
             </Link>
             <div className="mt-2 flex flex-wrap items-center gap-3">
-              <h1 className="text-2xl font-semibold tracking-tight text-white">
+              <h1 className="text-2xl font-semibold tracking-tight text-gl-text">
                 {service.name}
               </h1>
               <StatusPill status={status} />
             </div>
-            <p className="mt-1 text-sm text-zinc-400">
+            <p className="mt-1 text-sm text-gl-text-muted">
               {service.repoUrl} ·{" "}
-              <span className="text-zinc-500">{service.branch}</span>
+              <span className="text-gl-text-muted">{service.branch}</span>
             </p>
           </div>
           <div className="flex flex-col items-end gap-2">
@@ -158,8 +159,8 @@ export function AppDetailTabs({
                   onTriggered={() => router.refresh()}
                 />
               )}
-              <span className="mx-1 h-6 w-px bg-white/10" aria-hidden />
-              <span className="text-xs text-zinc-500">Replicas</span>
+              <span className="mx-1 h-6 w-px bg-gl-edge" aria-hidden />
+              <span className="text-xs text-gl-text-muted">Replicas</span>
               <input
                 type="number"
                 min={1}
@@ -169,7 +170,7 @@ export function AppDetailTabs({
                   setReplicas(e.target.value);
                   setReplicasError(null);
                 }}
-                className="w-14 rounded-lg border border-white/[0.08] bg-black/20 px-2 py-1.5 text-center text-sm text-white focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30"
+                className="w-14 rounded-lg border border-gl-edge bg-gl-input-bg px-2 py-1.5 text-center text-sm text-gl-text focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30"
               />
               <button
                 type="button"
@@ -184,14 +185,14 @@ export function AppDetailTabs({
             {replicasError && (
               <p className="text-xs text-amber-400">{replicasError}</p>
             )}
-            <span className="text-xs text-zinc-500">
+            <span className="text-xs text-gl-text-muted">
               Deploy is run by the agent (queued then processed)
             </span>
           </div>
         </div>
 
         <nav
-          className="flex gap-0 border-b border-white/[0.06] px-6"
+          className="flex gap-0 border-b border-gl-edge px-6"
           aria-label="App sections"
         >
           {tabs.map((tab) => (
@@ -202,7 +203,7 @@ export function AppDetailTabs({
               className={`relative flex items-center gap-2 border-b-2 px-4 py-3.5 text-sm font-medium transition ${
                 activeTab === tab.id
                   ? "border-primary text-primary"
-                  : "border-transparent text-zinc-400 hover:border-white/10 hover:text-zinc-300"
+                  : "border-transparent text-gl-text-muted hover:border-gl-edge hover:text-gl-text"
               }`}
             >
               <svg
@@ -224,7 +225,7 @@ export function AppDetailTabs({
         </nav>
       </div>
 
-      <div className="rounded-native border border-white/[0.06] bg-gl-card shadow-sm overflow-hidden">
+      <div className="rounded-native border border-gl-edge bg-gl-card shadow-sm overflow-hidden">
         {activeTab === "info" && (
           <InfoTab
             repoUrl={service.repoUrl}
@@ -237,8 +238,8 @@ export function AppDetailTabs({
 
         {activeTab === "diagnostics" && (
           <div className="p-6">
-            <h2 className="text-base font-semibold text-white">Diagnostics</h2>
-            <p className="mt-0.5 text-sm text-zinc-400">
+            <h2 className="text-base font-semibold text-gl-text">Diagnostics</h2>
+            <p className="mt-0.5 text-sm text-gl-text-muted">
               Check container reachability and Traefik routing. Run after deploy
               to verify the app is reachable.
             </p>

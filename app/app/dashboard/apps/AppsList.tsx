@@ -22,7 +22,7 @@ function StatusPill({ status }: { status: string }) {
     pushing: "bg-amber-500/15 text-amber-400 border-amber-500/30",
     deploying: "bg-amber-500/15 text-amber-400 border-amber-500/30",
     queued: "bg-zinc-500/15 text-zinc-400 border-zinc-500/30",
-    idle: "bg-zinc-500/10 text-zinc-500 border-white/10",
+    idle: "bg-zinc-500/10 text-gl-text-muted border-gl-edge",
   };
   const style = styles[s] ?? styles.idle;
   return (
@@ -78,20 +78,20 @@ export function AppsList({ services }: { services: Service[] }) {
           <Link
             key={s.id}
             href={`/dashboard/apps/${s.id}`}
-            className="group rounded-native border border-white/[0.06] bg-gl-card p-5 shadow-sm transition hover:border-primary/20"
+            className="group rounded-native border border-gl-edge bg-gl-card p-5 shadow-sm transition hover:border-primary/20"
           >
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0 flex-1">
-                <h2 className="truncate text-base font-semibold text-white group-hover:text-primary">
+                <h2 className="truncate text-base font-semibold text-gl-text group-hover:text-primary">
                   {s.name}
                 </h2>
-                <p className="mt-0.5 truncate text-xs text-zinc-500" title={repoSlug}>
+                <p className="mt-0.5 truncate text-xs text-gl-text-muted" title={repoSlug}>
                   {repoSlug}
                 </p>
               </div>
               <StatusPill status={status} />
             </div>
-            <div className="mt-4 flex items-center justify-between text-xs text-zinc-500">
+            <div className="mt-4 flex items-center justify-between text-xs text-gl-text-muted">
               <span>{s.branch}</span>
               {s.deployments[0]?.createdAt && (
                 <span>

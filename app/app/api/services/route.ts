@@ -44,6 +44,7 @@ export async function POST(request: Request) {
     name: string;
     repoUrl: string;
     branch: string;
+    domain?: string | null;
     port?: number | null;
     hostPort?: number | null;
     entryCommand?: string | null;
@@ -56,7 +57,7 @@ export async function POST(request: Request) {
   } catch {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
-  const { name, repoUrl, branch, port, hostPort, entryCommand, buildCommand, env, deployMode } = body;
+  const { name, repoUrl, branch, domain, port, hostPort, entryCommand, buildCommand, env, deployMode } = body;
   if (!name || !repoUrl) {
     return NextResponse.json({ error: "name and repoUrl required" }, { status: 400 });
   }
@@ -70,6 +71,7 @@ export async function POST(request: Request) {
   }
   const envStr = env && typeof env === "object" ? JSON.stringify(env) : null;
   const mode = deployMode === "auto" ? "auto" : "manual";
+  const domainTrimmed = typeof domain === "string" ? domain.trim() || null : null;
   const service = await prisma.service.create({
     data: {
       userId,
@@ -77,6 +79,7 @@ export async function POST(request: Request) {
       repoUrl: repoUrl.trim(),
       branch: (branch || "main").trim(),
       stackName,
+      domain: domainTrimmed,
       port: port != null && port >= 1 && port <= 65535 ? port : null,
       hostPort: hostPort != null && hostPort >= 1 && hostPort <= 65535 ? hostPort : null,
       entryCommand: entryCommand?.trim() || null,

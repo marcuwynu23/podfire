@@ -50,13 +50,13 @@ export function CheckForUpdatesButton({
         type="button"
         onClick={check}
         disabled={loading}
-        className="rounded-xl border border-white/[0.12] bg-white/[0.06] px-4 py-2.5 text-sm font-medium text-zinc-300 transition hover:bg-white/[0.1] disabled:opacity-50"
+        className="rounded-xl border border-gl-edge bg-gl-input-bg px-4 py-2.5 text-sm font-medium text-gl-text-muted transition hover:bg-gl-hover disabled:opacity-50"
         title="Check branch for new commits and deploy if any (auto-deploy checks every 2 min while this page is open)"
       >
         {loading ? "Checking…" : "Check for updates"}
       </button>
       {message && (
-        <span className="text-xs text-zinc-500">{message}</span>
+        <span className="text-xs text-gl-text-muted">{message}</span>
       )}
     </div>
   );

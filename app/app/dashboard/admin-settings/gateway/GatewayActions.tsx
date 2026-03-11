@@ -127,15 +127,15 @@ export function GatewayActions() {
     <div className="space-y-6">
       <div
         id="gateway-config"
-        className="rounded-native border border-white/[0.06] bg-gl-card p-6 shadow-sm"
+        className="rounded-native border border-gl-edge bg-gl-card p-6 shadow-sm"
       >
-        <h2 className="mb-2 text-lg font-medium text-white">Configuration</h2>
-        <p className="mb-4 text-sm text-zinc-400">
+        <h2 className="mb-2 text-lg font-medium text-gl-text">Configuration</h2>
+        <p className="mb-4 text-sm text-gl-text-muted">
           View and edit the Gateway (Traefik) stack YAML. Update to apply
           changes, or Restart to remove and redeploy with this config.
         </p>
         {yamlLoadState === "loading" && (
-          <p className="text-sm text-zinc-500">Loading configuration…</p>
+          <p className="text-sm text-gl-text-muted">Loading configuration…</p>
         )}
         {yamlLoadState === "error" && (
           <p className="text-sm text-amber-400">
@@ -149,7 +149,7 @@ export function GatewayActions() {
               onChange={(e) => setYaml(e.target.value)}
               placeholder="# Paste or edit Traefik stack YAML..."
               rows={18}
-              className="mt-2 w-full rounded-lg border border-white/[0.08] bg-black/30 px-3 py-2 font-mono text-sm text-zinc-200 placeholder:text-zinc-500 focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/30"
+              className="mt-2 w-full rounded-lg border border-gl-edge bg-gl-input-bg px-3 py-2 font-mono text-sm text-gl-text placeholder-gl-text-muted focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/30"
               spellCheck={false}
             />
             <div className="mt-4 flex flex-wrap items-center gap-3">
@@ -175,7 +175,7 @@ export function GatewayActions() {
                   restartState === "loading" ||
                   removeState === "loading"
                 }
-                className="rounded-xl border border-white/[0.12] bg-white/[0.06] px-4 py-2 text-sm font-medium text-white transition hover:bg-white/[0.1] disabled:opacity-50"
+                className="rounded-xl border border-gl-edge bg-gl-input-bg px-4 py-2 text-sm font-medium text-gl-text transition hover:bg-gl-hover disabled:opacity-50"
               >
                 {restartState === "loading" ? "Restarting…" : "Restart Gateway"}
               </button>
@@ -194,7 +194,7 @@ export function GatewayActions() {
             </div>
             {(message || hasError) && (
               <p
-                className={`mt-3 text-sm ${hasError ? "text-amber-400" : "text-zinc-400"}`}
+                className={`mt-3 text-sm ${hasError ? "text-amber-400" : "text-gl-text-muted"}`}
               >
                 {message}
               </p>

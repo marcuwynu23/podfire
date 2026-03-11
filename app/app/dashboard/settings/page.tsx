@@ -1,28 +1,36 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { getSessionUserId } from "@/lib/auth";
+import { getSessionUser } from "@/lib/auth";
 import { SettingsForm } from "./SettingsForm";
 
 export default async function SettingsPage() {
-  const userId = await getSessionUserId();
-  if (!userId) redirect("/");
+  const user = await getSessionUser();
+  if (!user) redirect("/");
 
   return (
     <div className="w-full">
       <Link
         href="/dashboard"
-        className="text-sm text-zinc-500 transition hover:text-white"
+        className="text-sm text-gl-text-muted transition hover:text-gl-text"
       >
         ← Overview
       </Link>
-      <h1 className="mt-1 text-2xl font-semibold tracking-tight text-white sm:text-3xl">
+      <h1 className="mt-1 text-2xl font-semibold tracking-tight text-gl-text sm:text-3xl">
         Settings
       </h1>
-      <p className="mt-1 mb-6 text-sm text-zinc-400">
-        Configure Cloudflare, certificates, Docker registry, and GitHub. Values are stored encrypted and override .env when set.
+      <p className="mt-1 mb-6 text-sm text-gl-text-muted">
+        User profile and theme. For gateway, Cloudflare, GitHub, and registry
+        configuration, use{" "}
+        <Link
+          href="/dashboard/admin-settings"
+          className="text-primary hover:underline"
+        >
+          Admin settings
+        </Link>
+        .
       </p>
       <div className="max-w-3xl">
-        <SettingsForm />
+        <SettingsForm user={user} />
       </div>
     </div>
   );

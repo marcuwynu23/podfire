@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { DeleteAppButton } from "../components/DeleteAppButton";
+import { DeleteAppButton } from "../../components/DeleteAppButton";
 
 function DeployModeBlock({
   serviceId,
@@ -43,9 +43,9 @@ function DeployModeBlock({
   }
 
   return (
-    <section className="mt-6 rounded-native border border-white/[0.06] bg-black/10 p-4">
-      <h3 className="text-sm font-medium text-white">Deploy mode</h3>
-      <p className="mt-0.5 text-xs text-zinc-500">
+    <section className="mt-6 rounded-native border border-gl-edge bg-gl-input-bg p-4">
+      <h3 className="text-sm font-medium text-gl-text">Deploy mode</h3>
+      <p className="mt-0.5 text-xs text-gl-text-muted">
         Manual: deploy only when you click Deploy. Auto: watch the app branch
         and deploy when there are new commits (call the auto-deploy cron
         periodically).
@@ -54,7 +54,7 @@ function DeployModeBlock({
         <select
           value={mode}
           onChange={(e) => setMode(e.target.value as "manual" | "auto")}
-          className="rounded-native-sm border border-white/[0.06] bg-black/20 px-3 py-2 text-sm text-white focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+          className="rounded-native-sm border border-gl-edge bg-gl-input-bg px-3 py-2 text-sm text-gl-text focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
         >
           <option value="manual">Manual</option>
           <option value="auto">Auto (watch branch)</option>
@@ -86,8 +86,8 @@ export function SettingsPanel({
 }) {
   return (
     <div className="p-6">
-      <h2 className="text-base font-semibold text-white">Settings</h2>
-      <p className="mt-0.5 text-sm text-zinc-400">
+      <h2 className="text-base font-semibold text-gl-text">Settings</h2>
+      <p className="mt-0.5 text-sm text-gl-text-muted">
         Deploy mode and danger zone.
       </p>
 
@@ -99,8 +99,8 @@ export function SettingsPanel({
 
       <section className="mt-6 rounded-native border border-red-500/20 bg-red-500/5">
         <div className="border-b border-red-500/20 px-4 py-3">
-          <h3 className="text-sm font-semibold text-white">Danger zone</h3>
-          <p className="mt-0.5 text-xs text-zinc-400">
+          <h3 className="text-sm font-semibold text-gl-text">Danger zone</h3>
+          <p className="mt-0.5 text-xs text-gl-text-muted">
             Permanently remove this app and its deployments. This cannot be
             undone.
           </p>

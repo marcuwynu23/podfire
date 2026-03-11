@@ -10,6 +10,9 @@
   --gl-edge: rgba(255, 255, 255, 0.06);
   --gl-text: #e5e5e5;
   --gl-text-muted: #a1a1aa;
+  --gl-input-bg: rgba(0, 0, 0, 0.2);
+  --gl-overlay: rgba(0, 0, 0, 0.6);
+  --gl-hover: rgba(255, 255, 255, 0.05);
   --primary: #ea580c;
   --primary-hover: #c2410c;
   --fire-from: #ea580c;
@@ -26,6 +29,9 @@ html[data-theme="light"] {
   --gl-edge: rgba(0, 0, 0, 0.08);
   --gl-text: #171717;
   --gl-text-muted: #525252;
+  --gl-input-bg: rgba(0, 0, 0, 0.06);
+  --gl-overlay: rgba(0, 0, 0, 0.4);
+  --gl-hover: rgba(0, 0, 0, 0.04);
 }
 
 body {

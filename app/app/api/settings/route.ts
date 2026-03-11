@@ -9,15 +9,31 @@ const ALL_KEYS = [
   "docker_registry",
   "docker_registry_username",
   "docker_registry_password",
+  "harbor_registry",
+  "harbor_registry_username",
+  "harbor_registry_password",
+  "default_registry",
   "github_client_id",
   "github_client_secret",
+  "gitlab_client_id",
+  "gitlab_client_secret",
+  "default_scm",
+  "dns_domains",
+  "ssl_provider",
 ] as const;
+
+const PUBLIC_KEYS = ["dns_domains", "ssl_provider", "default_registry", "default_scm"] as const;
 
 export async function GET() {
   const userId = await getSessionUserId();
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const status = await getSettingsStatus();
-  return NextResponse.json({ settings: status });
+  const values: Record<string, string> = {};
+  for (const key of PUBLIC_KEYS) {
+    const v = await getSetting(key);
+    if (v != null) values[key] = v;
+  }
+  return NextResponse.json({ settings: status, values });
 }
 
 export async function PATCH(request: Request) {

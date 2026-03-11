@@ -113,6 +113,7 @@ export async function POST(request: Request) {
     cloneUrl,
     serviceName: service.name,
     stackName: service.stackName ?? service.name,
+    domain: service.domain ?? null,
     port,
     hostPort: service.hostPort ?? null,
     replicas: service.replicas ?? 1,

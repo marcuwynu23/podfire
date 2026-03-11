@@ -57,10 +57,11 @@ export async function GET(request: Request) {
         const portRes = await gatewayFetch("/agent/available-port", { cache: "no-store" });
         const portData = (await portRes.json()) as { port?: number; error?: string };
         if (portData.port != null && portData.port >= 1 && portData.port <= 65535) {
-          svc = await prisma.service.update({
+          const updated = await prisma.service.update({
             where: { id: svc.id },
             data: { hostPort: portData.port },
           });
+          svc = { ...updated, deployments: service.deployments };
         }
       } catch {
         // skip this service if we can't get port

@@ -102,11 +102,12 @@ function getPublishedPort(serviceName: string): number {
 
 export async function runServiceDiagnostics(
   stackName: string,
-  containerPort: number
+  containerPort: number,
+  domain?: string | null
 ): Promise<ServiceDiagnostics> {
   const safe = sanitizeForDocker(stackName);
   const serviceName = `${safe}_app`;
-  const expectedHost = `${safe}.localhost`;
+  const expectedHost = domain?.trim() ? `${safe}.${domain.trim()}` : `${safe}.localhost`;
 
   const result: ServiceDiagnostics = {
     stackName,
