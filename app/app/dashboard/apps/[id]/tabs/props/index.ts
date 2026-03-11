@@ -12,8 +12,8 @@ export type {
   Service,
 } from "./types";
 export {StatusPill} from "./StatusPill";
-export {InfoTab} from "./info/InfoTab";
-export {DeploymentsTab} from "./deployment/DeploymentsTab";
-export {LogsTab} from "./log/LogsTab";
-export {ServiceDiagnosticsBlock} from "./diagnostics/DiagnosticsTab";
-export {SettingsPanel} from "./settings/SettingsTab";
+export {InfoTab} from "../info/InfoTab";
+export {DeploymentsTab} from "../deployment/DeploymentsTab";
+export {LogsTab} from "../log/LogsTab";
+export {ServiceDiagnosticsBlock} from "../diagnostics/DiagnosticsTab";
+export {SettingsPanel} from "../settings/SettingsTab";

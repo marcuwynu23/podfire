@@ -1,7 +1,7 @@
 "use client";
 
 import {useState} from "react";
-import type {DiagnosticsResult} from "../types";
+import type {DiagnosticsResult} from "../props/types";
 
 export function ServiceDiagnosticsBlock({
   serviceId,
@@ -61,7 +61,10 @@ export function ServiceDiagnosticsBlock({
       </p>
       {expectedHost && !expectedHost.endsWith(".localhost") && (
         <p className="mt-2 text-xs text-amber-400/90">
-          Using a custom domain? Go to <strong>Settings</strong> → Domain and click <strong>Update routing</strong> (or redeploy) so Traefik uses Host: {expectedHost}. Otherwise requests to http://{expectedHost} will 404.
+          Using a custom domain? Go to <strong>Settings</strong> → Domain and
+          click <strong>Update routing</strong> (or redeploy) so Traefik uses
+          Host: {expectedHost}. Otherwise requests to http://{expectedHost} will
+          404.
         </p>
       )}
       <button

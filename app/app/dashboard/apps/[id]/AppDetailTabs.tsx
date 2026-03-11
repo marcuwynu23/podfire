@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import {useState, useEffect} from "react";
+import {useRouter} from "next/navigation";
 import {
   tabs,
   type TabId,
@@ -17,9 +17,9 @@ import {
   LogsTab,
   ServiceDiagnosticsBlock,
   SettingsPanel,
-} from "./tabs";
-import { DeployButton } from "./components/DeployButton";
-import { CheckForUpdatesButton } from "./components/CheckForUpdatesButton";
+} from "./tabs/props";
+import {DeployButton} from "./components/DeployButton";
+import {CheckForUpdatesButton} from "./components/CheckForUpdatesButton";
 
 export function AppDetailTabs({
   service,
@@ -35,10 +35,15 @@ export function AppDetailTabs({
   const serverStatus = latestDeployment?.status ?? "—";
   const [polledStatus, setPolledStatus] = useState<string | null>(null);
   const status = polledStatus ?? serverStatus;
-  const baseHost = (service.stackName ?? service.name).toLowerCase().replace(/[^a-z0-9-]/g, "-");
-  const domain = (service as { domain?: string | null }).domain;
-  const diagnosticsEnabled = (service as { diagnosticsEnabled?: boolean }).diagnosticsEnabled ?? false;
-  const visibleTabs = tabs.filter((tab) => tab.id !== "diagnostics" || diagnosticsEnabled);
+  const baseHost = (service.stackName ?? service.name)
+    .toLowerCase()
+    .replace(/[^a-z0-9-]/g, "-");
+  const domain = (service as {domain?: string | null}).domain;
+  const diagnosticsEnabled =
+    (service as {diagnosticsEnabled?: boolean}).diagnosticsEnabled ?? false;
+  const visibleTabs = tabs.filter(
+    (tab) => tab.id !== "diagnostics" || diagnosticsEnabled,
+  );
   useEffect(() => {
     if (activeTab === "diagnostics" && !diagnosticsEnabled) {
       setActiveTab("info");
@@ -68,22 +73,22 @@ export function AppDetailTabs({
     try {
       const patch = await fetch(`/api/services/${service.id}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ replicas: num }),
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({replicas: num}),
       });
       if (!patch.ok) {
         const data = await patch.json().catch(() => ({}));
-        setReplicasError((data as { error?: string }).error ?? "Failed to save");
+        setReplicasError((data as {error?: string}).error ?? "Failed to save");
         return;
       }
       const scale = await fetch(`/api/services/${service.id}/scale`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ replicas: num }),
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({replicas: num}),
       });
       if (!scale.ok) {
         const data = await scale.json().catch(() => ({}));
-        setReplicasError((data as { error?: string }).error ?? "Scale failed");
+        setReplicasError((data as {error?: string}).error ?? "Scale failed");
         return;
       }
       router.refresh();
@@ -104,7 +109,7 @@ export function AppDetailTabs({
         const res = await fetch(`/api/services/${service.id}/status`, {
           cache: "no-store",
         });
-        const data = (await res.json()) as { status?: string };
+        const data = (await res.json()) as {status?: string};
         const next = data.status ?? current;
         setPolledStatus(next);
         if (!BUSY_STATUSES.includes(next)) {
@@ -126,7 +131,7 @@ export function AppDetailTabs({
         const res = await fetch(`/api/services/${service.id}/status?live=1`, {
           cache: "no-store",
         });
-        const data = (await res.json()) as { status?: string };
+        const data = (await res.json()) as {status?: string};
         const next = data.status ?? current;
         setPolledStatus((prev) => (prev === next ? prev : next));
       } catch {
@@ -163,7 +168,7 @@ export function AppDetailTabs({
           </div>
           <div className="flex flex-col items-end gap-2">
             <div className="flex flex-wrap items-center justify-end gap-2">
-              {(service as { deployMode?: string }).deployMode === "auto" && (
+              {(service as {deployMode?: string}).deployMode === "auto" && (
                 <CheckForUpdatesButton
                   serviceId={service.id}
                   onTriggered={() => router.refresh()}
@@ -190,7 +195,11 @@ export function AppDetailTabs({
               >
                 {replicasLoading ? "Applying…" : "Scale"}
               </button>
-              <DeployButton serviceId={service.id} currentStatus={status} compact />
+              <DeployButton
+                serviceId={service.id}
+                currentStatus={status}
+                compact
+              />
             </div>
             {replicasError && (
               <p className="text-xs text-amber-400">{replicasError}</p>
@@ -248,14 +257,20 @@ export function AppDetailTabs({
 
         {activeTab === "diagnostics" && (
           <div className="p-6">
-            <h2 className="text-base font-semibold text-gl-text">Diagnostics</h2>
+            <h2 className="text-base font-semibold text-gl-text">
+              Diagnostics
+            </h2>
             <p className="mt-0.5 text-sm text-gl-text-muted">
               Check container reachability and Traefik routing. Run after deploy
               to verify the app is reachable.
             </p>
             <ServiceDiagnosticsBlock
               serviceId={service.id}
-              expectedHost={domain?.trim() ? `${baseHost}.${domain.trim()}` : `${baseHost}.localhost`}
+              expectedHost={
+                domain?.trim()
+                  ? `${baseHost}.${domain.trim()}`
+                  : `${baseHost}.localhost`
+              }
             />
           </div>
         )}
@@ -275,12 +290,16 @@ export function AppDetailTabs({
             serviceId={service.id}
             appName={service.name}
             deployMode={
-              (service as { deployMode?: string }).deployMode ?? "manual"
+              (service as {deployMode?: string}).deployMode ?? "manual"
             }
-            domain={(service as { domain?: string | null }).domain ?? null}
+            domain={(service as {domain?: string | null}).domain ?? null}
             diagnosticsEnabled={diagnosticsEnabled}
-            entryCommand={(service as { entryCommand?: string | null }).entryCommand ?? null}
-            buildCommand={(service as { buildCommand?: string | null }).buildCommand ?? null}
+            entryCommand={
+              (service as {entryCommand?: string | null}).entryCommand ?? null
+            }
+            buildCommand={
+              (service as {buildCommand?: string | null}).buildCommand ?? null
+            }
             onSaved={() => router.refresh()}
           />
         )}
