@@ -25,9 +25,9 @@ export async function GET(
   }
   const stackName = service.stackName ?? service.name;
   const port = service.port ?? 80;
-  const domain = service.domain ?? "";
+  const domain = (service as { domain?: string | null }).domain ?? "";
   const query = new URLSearchParams({ stackName, port: String(port) });
-  if (domain) query.set("domain", domain);
+  if (domain && String(domain).trim()) query.set("domain", String(domain).trim());
   try {
     const res = await gatewayFetch(
       `/service-diagnostics?${query.toString()}`,

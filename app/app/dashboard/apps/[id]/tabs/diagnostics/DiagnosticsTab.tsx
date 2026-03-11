@@ -3,7 +3,13 @@
 import {useState} from "react";
 import type {DiagnosticsResult} from "../types";
 
-export function ServiceDiagnosticsBlock({serviceId}: {serviceId: string}) {
+export function ServiceDiagnosticsBlock({
+  serviceId,
+  expectedHost,
+}: {
+  serviceId: string;
+  expectedHost?: string;
+}) {
   const [result, setResult] = useState<DiagnosticsResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -49,9 +55,15 @@ export function ServiceDiagnosticsBlock({serviceId}: {serviceId: string}) {
     <section className="mt-8 rounded-native border border-gl-edge p-4">
       <h3 className="text-sm font-medium text-gl-text">Service diagnostics</h3>
       <p className="mt-0.5 text-xs text-gl-text-muted">
-        Inspect the deployed service: container reachability (curl) and Traefik
-        routing. Run after deploy to verify.
+        {expectedHost
+          ? `Inspect the deployed service at http://${expectedHost}: container reachability and Traefik routing. Run after deploy to verify.`
+          : "Inspect the deployed service: container reachability and Traefik routing (HTTP fetch with Host header). Run after deploy to verify."}
       </p>
+      {expectedHost && !expectedHost.endsWith(".localhost") && (
+        <p className="mt-2 text-xs text-amber-400/90">
+          Using a custom domain? Go to <strong>Settings</strong> → Domain and click <strong>Update routing</strong> (or redeploy) so Traefik uses Host: {expectedHost}. Otherwise requests to http://{expectedHost} will 404.
+        </p>
+      )}
       <button
         type="button"
         onClick={runDiagnostics}

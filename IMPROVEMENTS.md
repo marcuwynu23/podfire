@@ -9,11 +9,11 @@ Tracked ideas for making PodFire more robust, scalable, and user-friendly. Use t
 ## Agent
 
 - [ ] **Convert agent to Go** — Rewrite the deploy agent in Go for a single binary, lower memory footprint, and better performance under load. Improves robustness and deployment on resource-constrained nodes.
-- [ ] **Agent health checks** — Periodic heartbeat and readiness checks from dashboard; mark agents offline when unresponsive.
-- [ ] **Agent resource limits** — Configurable CPU/memory caps per agent or per job to avoid runaway builds.
+- [x] **Agent health checks** — Periodic heartbeat and readiness checks from dashboard; mark agents offline when unresponsive.
+- [x] **Agent resource limits** — Configurable CPU/memory caps per agent or per job to avoid runaway builds.
 - [x] **Parallel deploy jobs** — Allow multiple deploy jobs per agent (queue or worker pool) to reduce wait times.
-- [ ] **Retry and backoff** — Automatic retries for failed deploys with exponential backoff and max attempts.
-- [ ] **Structured deploy logs** — Emit machine-readable log events (phases, duration, errors) for better dashboard UX and debugging.
+- [x] **Retry and backoff** — Automatic retries for failed deploys with exponential backoff and max attempts.
+- [x] **Structured deploy logs** — Emit machine-readable log events (phases, duration, errors) for better dashboard UX and debugging.
 
 ---
 

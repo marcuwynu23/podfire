@@ -12,17 +12,29 @@ function envToYaml(env: Record<string, string> | undefined): string {
   return "    environment:\n" + lines.join("\n") + "\n";
 }
 
+function resourcesBlock(cpuLimit?: string | null, memoryLimit?: string | null): string {
+  if (!cpuLimit?.trim() && !memoryLimit?.trim()) return "";
+  const c = cpuLimit?.trim();
+  const m = memoryLimit?.trim();
+  const parts: string[] = [];
+  if (c) parts.push(`        cpus: "${c}"`);
+  if (m) parts.push(`        memory: ${m}`);
+  if (parts.length === 0) return "";
+  return "      resources:\n        limits:\n" + parts.join("\n") + "\n";
+}
+
 export function generateStackYaml(
   stackName: string,
   imageTag: string,
   port: number = 80,
-  options?: { env?: Record<string, string>; replicas?: number; domain?: string | null }
+  options?: { env?: Record<string, string>; replicas?: number; domain?: string | null; cpuLimit?: string | null; memoryLimit?: string | null }
 ): string {
   const safe = sanitizeForDocker(stackName);
   const domain = options?.domain?.trim();
   const host = domain ? `${safe}.${domain}` : `${safe}.localhost`;
   const envBlock = envToYaml(options?.env);
   const replicas = Math.min(32, Math.max(1, options?.replicas ?? 1));
+  const resources = resourcesBlock(options?.cpuLimit, options?.memoryLimit);
   // No published ports: only Traefik publishes 80/443; apps are reached via overlay (see docker-swarm-stack-traefik-gateway.md).
   return `version: "3.9"
 
@@ -37,7 +49,7 @@ ${envBlock}    networks:
       - ${NETWORK}
     deploy:
       replicas: ${replicas}
-      restart_policy:
+${resources}      restart_policy:
         condition: on-failure
       labels:
         - "traefik.enable=true"

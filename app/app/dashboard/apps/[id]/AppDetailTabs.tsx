@@ -36,7 +36,10 @@ export function AppDetailTabs({
   const [polledStatus, setPolledStatus] = useState<string | null>(null);
   const status = polledStatus ?? serverStatus;
   const baseHost = (service.stackName ?? service.name).toLowerCase().replace(/[^a-z0-9-]/g, "-");
-  const appUrl = `http://${baseHost}${service.domain ? `.${service.domain}` : ".localhost"}`;
+  const domain = (service as { domain?: string | null }).domain;
+  const appUrl = domain?.trim()
+    ? `http://${baseHost}.${domain.trim()}`
+    : `http://${baseHost}.localhost`;
   const currentReplicas = service.replicas ?? 1;
 
   const [replicas, setReplicas] = useState(String(currentReplicas));
@@ -243,7 +246,10 @@ export function AppDetailTabs({
               Check container reachability and Traefik routing. Run after deploy
               to verify the app is reachable.
             </p>
-            <ServiceDiagnosticsBlock serviceId={service.id} />
+            <ServiceDiagnosticsBlock
+              serviceId={service.id}
+              expectedHost={domain?.trim() ? `${baseHost}.${domain.trim()}` : `${baseHost}.localhost`}
+            />
           </div>
         )}
 
@@ -264,6 +270,9 @@ export function AppDetailTabs({
             deployMode={
               (service as { deployMode?: string }).deployMode ?? "manual"
             }
+            domain={(service as { domain?: string | null }).domain ?? null}
+            entryCommand={(service as { entryCommand?: string | null }).entryCommand ?? null}
+            buildCommand={(service as { buildCommand?: string | null }).buildCommand ?? null}
             onSaved={() => router.refresh()}
           />
         )}
