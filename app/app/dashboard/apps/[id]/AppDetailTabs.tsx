@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import {useState, useEffect} from "react";
+import {useState, useEffect, useRef} from "react";
 import {useRouter} from "next/navigation";
 import {
   tabs,
@@ -44,11 +44,27 @@ export function AppDetailTabs({
   const visibleTabs = tabs.filter(
     (tab) => tab.id !== "diagnostics" || diagnosticsEnabled,
   );
+  const primaryTabs = visibleTabs.slice(0, 4);
+  const overflowTabs = visibleTabs.slice(4);
+  const [moreOpen, setMoreOpen] = useState(false);
+  const moreRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     if (activeTab === "diagnostics" && !diagnosticsEnabled) {
       setActiveTab("info");
     }
   }, [activeTab, diagnosticsEnabled]);
+
+  useEffect(() => {
+    if (!moreOpen) return;
+    const close = (e: MouseEvent) => {
+      if (moreRef.current && !moreRef.current.contains(e.target as Node)) {
+        setMoreOpen(false);
+      }
+    };
+    document.addEventListener("click", close);
+    return () => document.removeEventListener("click", close);
+  }, [moreOpen]);
   const appUrl = domain?.trim()
     ? `http://${baseHost}.${domain.trim()}`
     : `http://${baseHost}.localhost`;
@@ -211,36 +227,137 @@ export function AppDetailTabs({
         </div>
 
         <nav
-          className="flex gap-0 overflow-x-auto border-b border-gl-edge px-4 scrollbar-thin sm:px-6"
+          className="flex border-b border-gl-edge px-2 sm:gap-0 sm:overflow-x-auto sm:px-6 sm:scrollbar-thin"
           aria-label="App sections"
         >
-          {visibleTabs.map((tab) => (
-            <button
-              key={tab.id}
-              type="button"
-              onClick={() => setActiveTab(tab.id)}
-              className={`relative flex shrink-0 items-center gap-2 border-b-2 px-3 py-3.5 text-sm font-medium transition sm:px-4 ${
-                activeTab === tab.id
-                  ? "border-primary text-primary"
-                  : "border-transparent text-gl-text-muted hover:border-gl-edge hover:text-gl-text"
-              }`}
-            >
-              <svg
-                className="h-4 w-4 shrink-0"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
+          {/* Mobile: 4 icon-only tabs + More (equal width) */}
+          <div className="flex w-full min-w-0 sm:hidden">
+            {primaryTabs.map((tab) => (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setActiveTab(tab.id)}
+                className={`relative flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 border-b-2 py-3 transition ${
+                  activeTab === tab.id
+                    ? "border-primary text-primary"
+                    : "border-transparent text-gl-text-muted hover:border-gl-edge hover:text-gl-text"
+                }`}
+                title={tab.label}
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d={tab.icon}
-                />
-              </svg>
-              {tab.label}
-            </button>
-          ))}
+                <svg
+                  className="h-5 w-5 shrink-0"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  aria-hidden
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d={tab.icon}
+                  />
+                </svg>
+                <span className="sr-only">{tab.label}</span>
+              </button>
+            ))}
+            {overflowTabs.length > 0 && (
+              <div className="relative flex min-w-0 flex-1 basis-0" ref={moreRef}>
+                <button
+                  type="button"
+                  onClick={() => setMoreOpen((o) => !o)}
+                  className={`relative flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 border-b-2 py-3 transition ${
+                    overflowTabs.some((t) => t.id === activeTab)
+                      ? "border-primary text-primary"
+                      : "border-transparent text-gl-text-muted hover:border-gl-edge hover:text-gl-text"
+                  }`}
+                  title="More tabs"
+                  aria-expanded={moreOpen}
+                  aria-haspopup="true"
+                >
+                  <svg
+                    className="h-5 w-5 shrink-0"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    aria-hidden
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"
+                    />
+                  </svg>
+                  <span className="sr-only">More</span>
+                </button>
+                {moreOpen && (
+                  <div className="absolute right-0 top-full z-20 mt-0.5 min-w-[10rem] rounded-lg border border-gl-edge bg-gl-card py-1 shadow-lg">
+                    {overflowTabs.map((tab) => (
+                      <button
+                        key={tab.id}
+                        type="button"
+                        onClick={() => {
+                          setActiveTab(tab.id);
+                          setMoreOpen(false);
+                        }}
+                        className={`flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm transition hover:bg-gl-hover ${
+                          activeTab === tab.id
+                            ? "bg-primary/10 text-primary"
+                            : "text-gl-text"
+                        }`}
+                      >
+                        <svg
+                          className="h-4 w-4 shrink-0"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d={tab.icon}
+                          />
+                        </svg>
+                        {tab.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+          {/* Desktop: all tabs with icon + label */}
+          <div className="hidden sm:flex sm:gap-0">
+            {visibleTabs.map((tab) => (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setActiveTab(tab.id)}
+                className={`relative flex shrink-0 items-center gap-2 border-b-2 px-4 py-3.5 text-sm font-medium transition ${
+                  activeTab === tab.id
+                    ? "border-primary text-primary"
+                    : "border-transparent text-gl-text-muted hover:border-gl-edge hover:text-gl-text"
+                }`}
+              >
+                <svg
+                  className="h-4 w-4 shrink-0"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d={tab.icon}
+                  />
+                </svg>
+                {tab.label}
+              </button>
+            ))}
+          </div>
         </nav>
       </div>
 

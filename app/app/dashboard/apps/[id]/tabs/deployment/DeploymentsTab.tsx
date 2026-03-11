@@ -130,7 +130,7 @@ export function DeploymentsTab({
           </div>
         ) : (
           <>
-          <div className="mt-4 h-[30rem] max-h-[30rem] overflow-y-auto">
+          <div className="scrollbar-deployment mt-4 h-[30rem] max-h-[30rem] overflow-y-auto">
           <ul className="space-y-3" role="list">
             {paginatedDeployments.map((d, i) => {
               const index = (currentPage - 1) * PAGE_SIZE + i;
