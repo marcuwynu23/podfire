@@ -8,8 +8,24 @@
   --gl-card: #222224;
   --gl-card-hover: #252528;
   --gl-edge: rgba(255, 255, 255, 0.06);
-  --primary: #1053b9;
-  --primary-hover: rgb(5, 73, 150);
+  --gl-text: #e5e5e5;
+  --gl-text-muted: #a1a1aa;
+  --primary: #ea580c;
+  --primary-hover: #c2410c;
+  --fire-from: #ea580c;
+  --fire-via: #f97316;
+  --fire-to: #dc2626;
+  --fire-gradient: linear-gradient(135deg, var(--fire-from) 0%, var(--fire-via) 50%, var(--fire-to) 100%);
+}
+
+html[data-theme="light"] {
+  --gl-bg: #f5f5f5;
+  --gl-sidebar: #ffffff;
+  --gl-card: #ffffff;
+  --gl-card-hover: #f0f0f0;
+  --gl-edge: rgba(0, 0, 0, 0.08);
+  --gl-text: #171717;
+  --gl-text-muted: #525252;
 }
 
 body {
@@ -17,8 +33,153 @@ body {
   width: 100%;
   box-sizing: border-box;
   background: var(--gl-bg);
-  color: #e5e5e5;
+  color: var(--gl-text);
   min-height: 100vh;
+}
+
+/* Thin scrollbar for log viewers and compact scroll areas */
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+[data-theme="light"] .scrollbar-thin {
+  scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+}
+
+[data-theme="light"] .scrollbar-thin::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.2);
+}
+
+[data-theme="light"] .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.3);
+}
+
+/* Fire gradient: literal values so they always apply (no var() dependency) */
+.fire-gradient {
+  background: linear-gradient(135deg, #ea580c 0%, #f97316 50%, #dc2626 100%);
+}
+
+.bg-fire {
+  background: linear-gradient(135deg, #ea580c 0%, #f97316 50%, #dc2626 100%) !important;
+  background-color: transparent !important;
+}
+
+.text-fire {
+  background: linear-gradient(135deg, #ea580c 0%, #f97316 50%, #dc2626 100%);
+  background-size: 100% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  display: inline-block;
+}
+
+.border-fire {
+  border: 2px solid transparent;
+  background: linear-gradient(var(--gl-bg), var(--gl-bg)) padding-box,
+    linear-gradient(135deg, #ea580c 0%, #f97316 50%, #dc2626 100%) border-box;
+}
+
+.btn-fire {
+  background: linear-gradient(135deg, #ea580c 0%, #f97316 50%, #dc2626 100%) !important;
+  background-color: transparent !important;
+  color: #fff !important;
+  font-weight: 500;
+  transition: filter 0.2s, box-shadow 0.2s;
+}
+
+.btn-fire:hover {
+  filter: brightness(1.08);
+  box-shadow: 0 4px 12px rgba(234, 88, 12, 0.35);
+}
+
+.btn-fire:active {
+  filter: brightness(0.95);
+}
+
+.btn-fire-outline {
+  background: linear-gradient(var(--gl-card), var(--gl-card)) padding-box,
+    linear-gradient(135deg, #ea580c 0%, #f97316 50%, #dc2626 100%) border-box !important;
+  background-color: transparent !important;
+  border: 2px solid transparent;
+  color: #ea580c;
+  font-weight: 500;
+  transition: color 0.2s, filter 0.2s, box-shadow 0.2s;
+}
+
+.btn-fire-outline:hover {
+  color: #f97316;
+  filter: brightness(1.05);
+  box-shadow: 0 0 0 1px rgba(234, 88, 12, 0.2);
+}
+
+.btn-fire-outline:active {
+  filter: brightness(0.98);
+}
+
+.btn-fire-ghost {
+  background: transparent !important;
+  color: #ea580c;
+  font-weight: 500;
+  transition: background 0.2s, color 0.2s;
+}
+
+.btn-fire-ghost:hover {
+  background: rgba(234, 88, 12, 0.12) !important;
+  color: #f97316;
+}
+
+.btn-fire-ghost:active {
+  background: rgba(234, 88, 12, 0.18) !important;
+}
+
+[data-theme="light"] .theme-switch-btn {
+  border-color: rgba(0, 0, 0, 0.12);
+  background: rgba(0, 0, 0, 0.05);
+  color: #525252;
+}
+
+[data-theme="light"] .theme-switch-btn:hover {
+  background: rgba(234, 88, 12, 0.1);
+  border-color: rgba(234, 88, 12, 0.25);
+  color: var(--primary);
+}
+
+[data-theme="light"] input:-webkit-autofill,
+[data-theme="light"] input:-webkit-autofill:hover,
+[data-theme="light"] input:-webkit-autofill:focus,
+[data-theme="light"] input:-webkit-autofill:active,
+[data-theme="light"] select:-webkit-autofill,
+[data-theme="light"] select:-webkit-autofill:hover,
+[data-theme="light"] select:-webkit-autofill:focus,
+[data-theme="light"] select:-webkit-autofill:active,
+[data-theme="light"] textarea:-webkit-autofill,
+[data-theme="light"] textarea:-webkit-autofill:hover,
+[data-theme="light"] textarea:-webkit-autofill:focus,
+[data-theme="light"] textarea:-webkit-autofill:active {
+  -webkit-text-fill-color: #171717;
+  -webkit-box-shadow: 0 0 0 1000px var(--gl-card) inset;
+  box-shadow: 0 0 0 1000px var(--gl-card) inset;
+  caret-color: #171717;
 }
 
 /* Autofill: lighter, match component backgrounds instead of default bright highlight */
@@ -34,9 +195,9 @@ textarea:-webkit-autofill,
 textarea:-webkit-autofill:hover,
 textarea:-webkit-autofill:focus,
 textarea:-webkit-autofill:active {
-  -webkit-text-fill-color: #e5e5e5;
+  -webkit-text-fill-color: var(--gl-text);
   -webkit-box-shadow: 0 0 0 1000px var(--gl-card) inset;
   box-shadow: 0 0 0 1000px var(--gl-card) inset;
-  caret-color: #e5e5e5;
+  caret-color: var(--gl-text);
   transition: background-color 5000s ease-in-out 0s;
 }

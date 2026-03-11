@@ -25,18 +25,14 @@ export default async function HomePage({
         <div className="w-full max-w-lg space-y-10 text-center">
           {/* Logo / Brand */}
           <div className="space-y-4">
-            <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-4 py-1.5 text-xs font-medium tracking-wide text-zinc-400">
-              Internal PaaS
+            <div className="flex justify-center">
+              <img src="/favicon.svg" alt="" className="h-16 w-16 sm:h-20 sm:w-20" aria-hidden />
             </div>
             <h1 className="text-4xl font-bold tracking-tight text-white sm:text-5xl md:text-6xl">
-              Dockly
+              PodFire
             </h1>
             <p className="mx-auto max-w-md text-lg text-zinc-400 sm:text-xl">
-              Deploy from GitHub to Docker Swarm. One agent, Traefik gateway, and{" "}
-              <code className="rounded border border-white/10 bg-white/5 px-1.5 py-0.5 font-mono text-sm text-zinc-300">
-                *.localhost
-              </code>{" "}
-              routing.
+              Deploy from source code management. One dashboard, agents, routing, and DNS. Own your infrastructure.
             </p>
           </div>
 
