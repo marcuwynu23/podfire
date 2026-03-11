@@ -2,8 +2,6 @@
 
 import { useState, useEffect, useRef } from "react";
 
-const DEFAULT_LABEL = "Default (<name>.localhost)";
-
 function DomainSelect({
   value,
   options,
@@ -27,7 +25,7 @@ function DomainSelect({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [open]);
 
-  const displayLabel = value.trim() ? value : DEFAULT_LABEL;
+  const displayLabel = value.trim() ? value : "Select domain";
 
   return (
     <div ref={ref} className="relative min-w-[12rem]">
@@ -57,20 +55,6 @@ function DomainSelect({
           role="listbox"
           className="absolute left-0 top-full z-10 mt-1 max-h-56 w-full overflow-auto rounded-native-sm border border-gl-edge bg-gl-card py-1 shadow-lg"
         >
-          <li role="option" aria-selected={value === ""}>
-            <button
-              type="button"
-              onClick={() => {
-                onChange("");
-                setOpen(false);
-              }}
-              className={`w-full px-3 py-2 text-left text-sm transition hover:bg-gl-input-bg ${
-                !value.trim() ? "bg-primary/10 text-primary" : "text-gl-text"
-              }`}
-            >
-              {DEFAULT_LABEL}
-            </button>
-          </li>
           {options.map((d) => (
             <li key={d} role="option" aria-selected={value === d}>
               <button
@@ -179,7 +163,7 @@ export function DomainSetting({
     <section className="mt-3 rounded-native border border-gl-edge bg-gl-input-bg p-4">
       <h3 className="text-sm font-medium text-gl-text">Domain</h3>
       <p className="mt-0.5 text-xs text-gl-text-muted">
-        App host: &lt;name&gt;.localhost or &lt;name&gt;.&lt;domain&gt; when a domain is set. Domains come from Admin → DNS.
+        App host: &lt;name&gt;.&lt;domain&gt; when a domain is set. Domains come from Admin → DNS.
       </p>
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <DomainSelect
