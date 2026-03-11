@@ -8,6 +8,7 @@ import {StatusPill} from "../props/StatusPill";
 type DeploymentWithMeta = Deployment & {
   retryCount?: number;
   phaseDurations?: string | null;
+  agentName?: string | null;
 };
 
 export function DeploymentsTab({
@@ -174,6 +175,22 @@ export function DeploymentsTab({
                         <span className="shrink-0">
                           <StatusPill status={d.status} />
                         </span>
+                        {d.agentName && (
+                          <>
+                            <span
+                              className="hidden shrink-0 text-gl-text-muted sm:inline"
+                              aria-hidden
+                            >
+                              ·
+                            </span>
+                            <span
+                              className="shrink-0 truncate max-w-[10rem]"
+                              title={`Agent: ${d.agentName}`}
+                            >
+                              {d.agentName}
+                            </span>
+                          </>
+                        )}
                         {commitSha && (
                           <>
                             <span

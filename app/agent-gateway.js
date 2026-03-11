@@ -13,8 +13,22 @@ const {
   getAgent,
   listAgents,
   dispatchJob,
+  markDeployFinished,
+  processDeployQueue,
+  setOnDeployDispatched,
   getFirstAgent,
 } = require("./lib/agent-connections");
+
+// When a deploy is actually sent to an agent, persist the agent name on the deployment.
+setOnDeployDispatched((deploymentId, { agentName }) => {
+  if (!deploymentId || !agentName) return;
+  prisma.deployment.update({
+    where: { id: deploymentId },
+    data: { agentName: String(agentName) },
+  }).catch((err) => {
+    console.error("[gateway] update deployment agentName:", err?.message ?? err);
+  });
+});
 
 const traefikStatusPending = new Map();
 const availablePortPending = new Map();
@@ -147,9 +161,13 @@ const server = http.createServer(async (req, res) => {
     req.on("end", () => {
       try {
         const payload = JSON.parse(body);
-        const sent = dispatchJob(payload);
+        const result = dispatchJob(payload);
         res.setHeader("Content-Type", "application/json");
-        res.end(JSON.stringify({ ok: sent }));
+        if (result.queued !== undefined) {
+          res.end(JSON.stringify({ ok: result.ok, queued: result.queued }));
+        } else {
+          res.end(JSON.stringify({ ok: result.ok }));
+        }
       } catch (err) {
         res.statusCode = 400;
         res.setHeader("Content-Type", "application/json");
@@ -166,7 +184,8 @@ const server = http.createServer(async (req, res) => {
       try {
         const payload = JSON.parse(body || "{}");
         const msg = { type: "update-stack-labels", ...payload };
-        const sent = dispatchJob(msg);
+        const result = dispatchJob(msg);
+        const sent = result && result.ok;
         res.setHeader("Content-Type", "application/json");
         res.end(JSON.stringify({ ok: sent, error: sent ? null : "No agent connected" }));
       } catch (err) {
@@ -542,6 +561,7 @@ wss.on("connection", (ws) => {
         await prisma.agentRegistrationKey.update({ where: { id: key.id }, data: { lastSeenAt: new Date() } }).catch(() => {});
         ws.send(JSON.stringify({ type: "registered", agentId }));
         console.log("[gateway] Agent registered:", agentId, displayName);
+        processDeployQueue();
       } else if (msg.type === "heartbeat" && agentId) {
         const conn = getAgent(agentId);
         if (conn && conn.keyId) {
@@ -552,6 +572,9 @@ wss.on("connection", (ws) => {
       } else if (msg.type === "status" && msg.deploymentId && msg.status) {
         await flushDeploymentLog(msg.deploymentId);
         await setDeploymentStatus(msg.deploymentId, msg.status);
+        if (msg.status === "running" || msg.status === "failed") {
+          markDeployFinished(msg.deploymentId);
+        }
       } else if (msg.type === "phase" && msg.deploymentId && msg.phase != null && typeof msg.durationSeconds === "number") {
         try {
           const d = await prisma.deployment.findUnique({ where: { id: msg.deploymentId }, select: { phaseDurations: true } });

@@ -73,6 +73,7 @@ model Deployment {
   commitMessage String?  // latest commit message (first line) at time of deploy
   retryCount    Int      @default(0) // number of retries after failure (for retry/backoff)
   phaseDurations String? // JSON: { "clone": 2.1, "build": 45, "push": 12, "deploy": 3 } for structured logs
+  agentName     String?  // display name of the agent that ran this deploy (set when job is sent)
   createdAt     DateTime @default(now())
 }
 

@@ -70,10 +70,7 @@ export async function POST(
         });
       }
     } catch {
-      return NextResponse.json(
-        { triggered: false, message: "Gateway not reachable." },
-        { status: 503 }
-      );
+      // Continue without host port; deploy can still be queued
     }
   }
 
@@ -122,11 +119,17 @@ export async function POST(
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(job),
     });
-    const dispatchData = (await dispatchRes.json()) as { ok?: boolean };
+    const dispatchData = (await dispatchRes.json()) as { ok?: boolean; queued?: boolean };
     if (dispatchRes.ok && dispatchData.ok) {
+      if (dispatchData.queued) {
+        await prisma.deployment.update({
+          where: { id: deployment.id },
+          data: { status: "queued", logs: "[check-updates] Queued; will run when an agent is available.\n" },
+        });
+      }
       return NextResponse.json({
         triggered: true,
-        message: "Deploy triggered.",
+        message: dispatchData.queued ? "Deploy queued." : "Deploy triggered.",
         deploymentId: deployment.id,
       });
     }
@@ -135,7 +138,7 @@ export async function POST(
       data: { status: "failed", logs: "Check-updates: failed to dispatch to agent.\n" },
     });
     return NextResponse.json(
-      { triggered: false, message: "Dispatch failed. Is an agent connected?" },
+      { triggered: false, message: "Dispatch failed." },
       { status: 503 }
     );
   } catch {

@@ -5,35 +5,12 @@ import { getLatestCommitInfo } from "@/lib/github";
 import { gatewayFetch } from "@/lib/gateway-auth";
 
 /**
- * Start a deployment. Requires the agent gateway running with at least one connected agent.
+ * Start a deployment. Job is sent to an agent if one is free, otherwise queued until an agent is available.
  */
 export async function POST(request: Request) {
   const userId = await getSessionUserId();
   if (!userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  let agentsRes: Response;
-  try {
-    agentsRes = await gatewayFetch("/agents", { cache: "no-store" });
-  } catch {
-    return NextResponse.json(
-      { error: "Agent gateway not reachable. Start it with: npm run agent-gateway" },
-      { status: 503 }
-    );
-  }
-  if (!agentsRes.ok) {
-    return NextResponse.json(
-      { error: "Agent gateway error." },
-      { status: 503 }
-    );
-  }
-  const agentsData = await agentsRes.json();
-  if ((agentsData.connected ?? 0) === 0) {
-    return NextResponse.json(
-      { error: "No agent connected. Start the agent and register it first (see Dashboard)." },
-      { status: 503 }
-    );
   }
 
   let body: { serviceId: string };
@@ -132,7 +109,7 @@ export async function POST(request: Request) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(job),
     });
-    const dispatchData = (await dispatchRes.json()) as { ok?: boolean };
+    const dispatchData = (await dispatchRes.json()) as { ok?: boolean; queued?: boolean };
     if (!dispatchRes.ok || !dispatchData.ok) {
       await prisma.deployment.update({
         where: { id: deployment.id },
@@ -142,6 +119,13 @@ export async function POST(request: Request) {
         { error: "Dispatch failed. Agent may have disconnected." },
         { status: 503 }
       );
+    }
+    if (dispatchData.queued) {
+      await prisma.deployment.update({
+        where: { id: deployment.id },
+        data: { status: "queued", logs: "Queued; will run when an agent is available.\n" },
+      });
+      return NextResponse.json({ deploymentId: deployment.id, status: "queued" });
     }
   } catch {
     await prisma.deployment.update({
