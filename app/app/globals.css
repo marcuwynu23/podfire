@@ -223,6 +223,27 @@ html[data-theme="light"] .logs-viewer-scroll::-webkit-scrollbar-thumb:hover {
   display: inline-block;
 }
 
+@keyframes heroGradientShift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.hero-bg-animated {
+  background:
+    radial-gradient(circle at top left, rgba(234, 88, 12, 0.24), transparent 55%),
+    radial-gradient(circle at bottom right, rgba(248, 113, 113, 0.18), transparent 55%),
+    linear-gradient(135deg, var(--gl-bg) 0%, var(--gl-bg) 40%, rgba(15, 23, 42, 0.98) 100%);
+  background-size: 180% 180%;
+  animation: heroGradientShift 18s ease-in-out infinite;
+}
+
 .border-fire {
   border: 2px solid transparent;
   background: linear-gradient(var(--gl-bg), var(--gl-bg)) padding-box,
