@@ -1,7 +1,7 @@
 import * as fs from "fs";
 import * as path from "path";
-import { sanitizeForDocker } from "./docker";
-import { runCommand, formatOutput } from "./run-command";
+import { sanitizeForDocker } from "./docker.js";
+import { runCommand, formatOutput } from "./run-command.js";
 
 function envToYaml(env: Record<string, string> | undefined): string {
   if (!env || Object.keys(env).length === 0) return "";
@@ -35,7 +35,9 @@ export function generateStackYaml(
   const envBlock = envToYaml(options?.env);
   const replicas = Math.min(32, Math.max(1, options?.replicas ?? 1));
   const resources = resourcesBlock(options?.cpuLimit, options?.memoryLimit);
-  // No published ports: only Traefik publishes 80/443; apps are reached via overlay (see docker-swarm-stack-traefik-gateway.md).
+  // In Docker Swarm, service name seen by Traefik is stackname_servicename (e.g. vite_app)
+  const traefikServiceName = `${safe}_app`;
+  // HTTP only here; SSL/TLS is handled by Traefik (gateway) via app/traefik and app API traefik config
   return `version: "3.9"
 
 networks:
@@ -56,8 +58,8 @@ ${resources}      restart_policy:
         - "traefik.swarm.network=${NETWORK}"
         - "traefik.http.routers.${safe}.rule=Host(\`${host}\`)"
         - "traefik.http.routers.${safe}.entrypoints=web"
-        - "traefik.http.routers.${safe}.service=${safe}"
-        - "traefik.http.services.${safe}.loadbalancer.server.port=${port}"
+        - "traefik.http.routers.${safe}.service=${traefikServiceName}"
+        - "traefik.http.services.${traefikServiceName}.loadbalancer.server.port=${port}"
 `;
 }
 

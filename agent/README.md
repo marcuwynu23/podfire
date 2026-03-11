@@ -5,13 +5,15 @@ Connects to the web app via **WebSocket** and registers as a deploy agent. The a
 ## Setup
 
 1. **Point to the web app**
+
    ```env
    APP_URL=http://localhost:3000
    ```
+
    The agent connects to `ws://localhost:3000/ws/agent` and registers.
 
 2. **Optional**
-   - `AGENT_NAME` — display name when registered (default: dockly-agent)
+   - `AGENT_NAME` — display name when registered (default: podfire-agent)
    - `DOCKER_REGISTRY` — leave unset for local images only
 
 3. **Install**
