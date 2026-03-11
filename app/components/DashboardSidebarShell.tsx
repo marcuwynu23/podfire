@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { DashboardNav } from "./DashboardNav";
-import { useDashboardMobile } from "./DashboardMobileContext";
+import {useState, useEffect} from "react";
+import {DashboardNav} from "./DashboardNav";
+import {useDashboardMobile} from "./DashboardMobileContext";
 
 const STORAGE_KEY = "dashboard-sidebar-collapsed";
 
@@ -15,7 +15,7 @@ export function DashboardSidebarShell({
 }) {
   const [collapsed, setCollapsed] = useState(false);
   const [mounted, setMounted] = useState(false);
-  const { mobileMenuOpen, setMobileMenuOpen } = useDashboardMobile();
+  const {mobileMenuOpen, setMobileMenuOpen} = useDashboardMobile();
 
   useEffect(() => {
     setMounted(true);
@@ -94,7 +94,7 @@ export function DashboardSidebarShell({
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
-              style={{ transform: collapsed ? "rotate(180deg)" : undefined }}
+              style={{transform: collapsed ? "rotate(180deg)" : undefined}}
             >
               <path
                 strokeLinecap="round"
@@ -103,7 +103,7 @@ export function DashboardSidebarShell({
                 d="M11 19l-7-7 7-7m8 14l-7-7 7-7"
               />
             </svg>
-            {!collapsed && <span>Collapse</span>}
+            {!collapsed}
           </button>
         </div>
       </aside>
