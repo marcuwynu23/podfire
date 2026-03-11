@@ -10,8 +10,9 @@ const ubuntu = Ubuntu({
 });
 
 export const metadata: Metadata = {
-  title: "Dockly — Internal PaaS",
-  description: "Deploy services from GitHub with Docker Stack and Gateway",
+  title: "PodFire — Deployment platform",
+  description: "Deploy from source code management. Own your infrastructure.",
+  icons: { icon: "/favicon.svg", apple: "/favicon.svg" },
 };
 
 export default function RootLayout({

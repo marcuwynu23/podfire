@@ -291,6 +291,18 @@ function connect(): WebSocket {
         if (ws.readyState === WebSocket.OPEN) {
           ws.send(JSON.stringify({ type: "service-logs", requestId, logs }));
         }
+      } else if (msg.type === "get-service-status" && msg.requestId != null && typeof msg.stackName === "string") {
+        const requestId = msg.requestId as string;
+        const stackName = String(msg.stackName).trim();
+        const safe = sanitizeForDocker(stackName);
+        const serviceName = `${safe}_app`;
+        const result = runCommand(`docker service ps ${serviceName} --no-trunc 2>&1`);
+        const out = [result.stdout, result.stderr].filter(Boolean).join("\n");
+        const notFound = !result.success && (out.includes("nothing found") || out.includes("No such service"));
+        const running = result.success && out.includes("Running");
+        if (ws.readyState === WebSocket.OPEN) {
+          ws.send(JSON.stringify({ type: "service-status", requestId, running: !notFound && running }));
+        }
       } else if (msg.type === "diagnose-service" && msg.requestId != null && typeof msg.stackName === "string") {
         const requestId = msg.requestId as string;
         const stackName = String(msg.stackName).trim();

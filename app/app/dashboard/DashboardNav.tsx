@@ -21,10 +21,10 @@ export function DashboardNav() {
           <Link
             key={href}
             href={href}
-            className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition hover:bg-white/[0.06] hover:text-white ${
+            className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition hover:bg-[var(--gl-card-hover)] hover:text-[color:var(--gl-text)] ${
               active
                 ? "bg-primary/10 text-primary"
-                : "text-zinc-400"
+                : "text-[color:var(--gl-text-muted)]"
             }`}
           >
             <svg className="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">

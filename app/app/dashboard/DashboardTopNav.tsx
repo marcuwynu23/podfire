@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import {useState, useRef, useEffect} from "react";
+import { useState, useRef, useEffect } from "react";
+import { ThemeSwitch } from "./ThemeProvider";
 
-export function DashboardTopNav({accountLabel}: {accountLabel: string | null}) {
+export function DashboardTopNav({ displayName }: { displayName: string | null }) {
   const [profileOpen, setProfileOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -17,19 +18,24 @@ export function DashboardTopNav({accountLabel}: {accountLabel: string | null}) {
   }, []);
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-white/[0.06] bg-gl-sidebar/95 shadow-sm backdrop-blur-md">
+    <header className="sticky top-0 z-40 w-full border-b border-[color:var(--gl-edge)] bg-gl-sidebar/95 shadow-sm backdrop-blur-md">
       <div className="flex h-11 w-full items-center justify-between gap-3 px-3 sm:px-4 lg:px-6">
         <Link
           href="/dashboard"
-          className="shrink-0 text-base font-semibold text-primary transition hover:text-primary-hover"
+          className="flex shrink-0 items-center gap-2 transition hover:opacity-90"
         >
-          Dockly
+          <img src="/favicon.svg" alt="" className="h-8 w-8" aria-hidden />
+          <span className="flex flex-col">
+            <span className="text-fire text-base font-semibold leading-tight">PodFire</span>
+            <span className="text-[10px] font-normal text-[color:var(--gl-text-muted)] leading-tight">Deployment platform</span>
+          </span>
         </Link>
 
         <div className="flex items-center gap-2">
+          <ThemeSwitch />
           <Link
             href="/dashboard/apps/new"
-            className="rounded-lg bg-primary px-3 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-primary-hover"
+            className="btn-fire rounded-lg px-3 py-2 text-sm font-medium shadow-sm transition"
           >
             Create App
           </Link>
@@ -37,7 +43,7 @@ export function DashboardTopNav({accountLabel}: {accountLabel: string | null}) {
             <button
               type="button"
               onClick={() => setProfileOpen((o) => !o)}
-              className="flex items-center gap-1.5 rounded-lg border border-white/[0.08] bg-white/[0.06] px-2.5 py-1.5 shadow-sm transition hover:border-primary/20 hover:bg-primary/10"
+              className="flex items-center gap-1.5 rounded-lg border border-[color:var(--gl-edge)] bg-white/[0.06] px-2.5 py-1.5 shadow-sm transition hover:border-primary/20 hover:bg-primary/10"
               aria-expanded={profileOpen}
               aria-haspopup="true"
             >
@@ -55,11 +61,11 @@ export function DashboardTopNav({accountLabel}: {accountLabel: string | null}) {
                   />
                 </svg>
               </span>
-              <span className="max-w-[120px] truncate text-sm font-medium text-white sm:max-w-[160px]">
-                {accountLabel ?? "Account"}
+              <span className="max-w-[120px] truncate text-sm font-medium text-[color:var(--gl-text)] sm:max-w-[160px]">
+                {displayName ?? "Account"}
               </span>
               <svg
-                className={`h-3.5 w-3.5 text-zinc-400 transition ${profileOpen ? "rotate-180" : ""}`}
+                className={`h-3.5 w-3.5 text-[color:var(--gl-text-muted)] transition ${profileOpen ? "rotate-180" : ""}`}
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -73,17 +79,17 @@ export function DashboardTopNav({accountLabel}: {accountLabel: string | null}) {
               </svg>
             </button>
             {profileOpen && (
-              <div className="absolute right-0 top-full z-50 mt-1.5 w-52 rounded-lg border border-white/[0.08] bg-gl-card py-2 shadow-sm">
-                <div className="border-b border-white/[0.06] px-3 py-2">
-                  <p className="truncate text-sm font-medium text-white">
-                    {accountLabel ?? "Account"}
+              <div className="absolute right-0 top-full z-50 mt-1.5 w-52 rounded-lg border border-[color:var(--gl-edge)] bg-gl-card py-2 shadow-sm">
+                <div className="border-b border-[color:var(--gl-edge)] px-3 py-2">
+                  <p className="truncate text-sm font-medium text-[color:var(--gl-text)]">
+                    {displayName ?? "Account"}
                   </p>
-                  <p className="mt-0.5 text-xs text-zinc-500">GitHub account</p>
+                  <p className="mt-0.5 text-xs text-[color:var(--gl-text-muted)]">Signed in with GitHub</p>
                 </div>
                 <form action="/api/github/logout" method="post" className="p-2">
                   <button
                     type="submit"
-                    className="w-full rounded-lg px-3 py-2 text-left text-sm text-zinc-300 transition hover:bg-red-500/10 hover:text-red-400"
+                    className="w-full rounded-lg px-3 py-2 text-left text-sm text-[color:var(--gl-text-muted)] transition hover:bg-red-500/10 hover:text-red-400"
                   >
                     Log out
                   </button>

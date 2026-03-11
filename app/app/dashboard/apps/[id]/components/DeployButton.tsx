@@ -6,9 +6,11 @@ import { useRouter } from "next/navigation";
 export function DeployButton({
   serviceId,
   currentStatus,
+  compact,
 }: {
   serviceId: string;
   currentStatus: string;
+  compact?: boolean;
 }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -32,12 +34,18 @@ export function DeployButton({
     }
   }
 
+  const base =
+    "bg-primary font-medium text-white transition hover:bg-primary-hover disabled:opacity-50";
+  const sizeClass = compact
+    ? "rounded-lg px-3 py-1.5 text-xs"
+    : "rounded-xl px-4 py-2.5 shadow-sm";
+
   return (
     <button
       type="button"
       onClick={deploy}
       disabled={loading || busy}
-      className="rounded-xl bg-primary px-4 py-2.5 font-medium text-white shadow-sm transition hover:bg-primary-hover disabled:opacity-50"
+      className={`${base} ${sizeClass}`}
       title={busy ? "Agent is processing this deployment" : "Queue a new deployment (agent will run it)"}
     >
       {loading ? "Queued…" : busy ? "Deploying…" : "Deploy"}

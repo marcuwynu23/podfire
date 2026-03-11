@@ -20,11 +20,13 @@ const traefikStatusPending = new Map();
 const availablePortPending = new Map();
 const serviceLogsPending = new Map();
 const serviceDiagnosticsPending = new Map();
+const serviceStatusPending = new Map();
 const serviceRollbackPending = new Map();
 const serviceScalePending = new Map();
 const TRAEFIK_STATUS_TIMEOUT_MS = 12000;
 const AVAILABLE_PORT_TIMEOUT_MS = 5000;
 const SERVICE_LOGS_TIMEOUT_MS = 8000;
+const SERVICE_STATUS_TIMEOUT_MS = 5000;
 const SERVICE_DIAGNOSTICS_TIMEOUT_MS = 60000;
 const SERVICE_ACTION_TIMEOUT_MS = 30000;
 const SERVICE_SCALE_TIMEOUT_MS = 60000;
@@ -367,6 +369,42 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  if (req.method === "GET" && pathname === "/service-status") {
+    const stackName = u.searchParams.get("stackName");
+    if (!stackName || !String(stackName).trim()) {
+      res.statusCode = 400;
+      res.setHeader("Content-Type", "application/json");
+      res.end(JSON.stringify({ error: "stackName required", running: false }));
+      return;
+    }
+    const conn = getFirstAgent();
+    if (!conn) {
+      res.setHeader("Content-Type", "application/json");
+      res.end(JSON.stringify({ running: false, error: "No agent connected" }));
+      return;
+    }
+    const requestId = "ss-" + Date.now() + "-" + Math.random().toString(36).slice(2, 9);
+    const promise = new Promise((resolve, reject) => {
+      serviceStatusPending.set(requestId, { resolve, reject });
+      setTimeout(() => {
+        if (serviceStatusPending.has(requestId)) {
+          serviceStatusPending.delete(requestId);
+          resolve({ running: false });
+        }
+      }, SERVICE_STATUS_TIMEOUT_MS);
+    });
+    try {
+      conn.ws.send(JSON.stringify({ type: "get-service-status", requestId, stackName: String(stackName).trim() }));
+      const { running } = await promise;
+      res.setHeader("Content-Type", "application/json");
+      res.end(JSON.stringify({ running: !!running }));
+    } catch (err) {
+      res.setHeader("Content-Type", "application/json");
+      res.end(JSON.stringify({ running: false, error: err?.message || "timeout" }));
+    }
+    return;
+  }
+
   if (req.method === "GET" && pathname === "/service-logs") {
     const stackName = u.searchParams.get("stackName");
     if (!stackName || !String(stackName).trim()) {
@@ -499,6 +537,12 @@ wss.on("connection", (ws) => {
         if (pending) {
           serviceDiagnosticsPending.delete(msg.requestId);
           pending.resolve(msg.error ? { error: msg.error } : { diagnostics: msg.diagnostics });
+        }
+      } else if (msg.type === "service-status" && msg.requestId != null) {
+        const pending = serviceStatusPending.get(msg.requestId);
+        if (pending) {
+          serviceStatusPending.delete(msg.requestId);
+          pending.resolve({ running: msg.running === true });
         }
       } else if (msg.type === "service-rollback-done" && msg.requestId != null) {
         const pending = serviceRollbackPending.get(msg.requestId);
