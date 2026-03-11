@@ -6,22 +6,26 @@ export function BuildSetting({
   serviceId,
   entryCommand,
   buildCommand,
+  outputDirectory,
   onSaved,
 }: {
   serviceId: string;
   entryCommand: string | null;
   buildCommand: string | null;
+  outputDirectory: string | null;
   onSaved: () => void;
 }) {
   const [entry, setEntry] = useState(entryCommand ?? "");
   const [build, setBuild] = useState(buildCommand ?? "");
+  const [outputDir, setOutputDir] = useState(outputDirectory ?? "");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     setEntry(entryCommand ?? "");
     setBuild(buildCommand ?? "");
-  }, [entryCommand, buildCommand]);
+    setOutputDir(outputDirectory ?? "");
+  }, [entryCommand, buildCommand, outputDirectory]);
 
   async function save() {
     setError(null);
@@ -33,6 +37,7 @@ export function BuildSetting({
         body: JSON.stringify({
           entryCommand: entry.trim() || null,
           buildCommand: build.trim() || null,
+          outputDirectory: outputDir.trim() || null,
         }),
       });
       const data = await res.json().catch(() => ({}));
@@ -72,6 +77,16 @@ export function BuildSetting({
             value={build}
             onChange={(e) => setBuild(e.target.value)}
             placeholder="e.g. npm run build"
+            className="w-full rounded-native-sm border border-gl-edge bg-gl-input-bg px-3 py-2 text-sm text-gl-text placeholder-gl-text-muted focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+          />
+        </div>
+        <div>
+          <label className="mb-1 block text-xs font-medium text-gl-text-muted">Output directory</label>
+          <input
+            type="text"
+            value={outputDir}
+            onChange={(e) => setOutputDir(e.target.value)}
+            placeholder="e.g. dist or .next"
             className="w-full rounded-native-sm border border-gl-edge bg-gl-input-bg px-3 py-2 text-sm text-gl-text placeholder-gl-text-muted focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
           />
         </div>

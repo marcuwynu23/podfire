@@ -112,6 +112,7 @@ export async function POST(
     replicas: svc.replicas ?? 1,
     entryCommand: svc.entryCommand ?? null,
     buildCommand: svc.buildCommand ?? null,
+    outputDirectory: (svc as { outputDirectory?: string | null }).outputDirectory ?? null,
     env: env ?? null,
   };
 

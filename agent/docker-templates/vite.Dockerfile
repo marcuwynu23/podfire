@@ -12,7 +12,7 @@ RUN __BUILD_COMMAND__
 
 FROM node:20-alpine AS runner
 WORKDIR /app
-COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/__OUTPUT_DIR__ ./__OUTPUT_DIR__
 RUN npm install -g serve
 EXPOSE 3000
 CMD __ENTRY_CMD__

@@ -3,10 +3,12 @@
 import Link from "next/link";
 import {useState, useRef, useEffect} from "react";
 import {ThemeSwitch} from "./ThemeProvider";
+import {useDashboardMobile} from "./DashboardMobileContext";
 
 export function DashboardTopNav({displayName}: {displayName: string | null}) {
   const [profileOpen, setProfileOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const { setMobileMenuOpen } = useDashboardMobile();
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -19,31 +21,45 @@ export function DashboardTopNav({displayName}: {displayName: string | null}) {
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-[color:var(--gl-edge)] bg-gl-sidebar/95 shadow-sm backdrop-blur-md">
-      <div className="flex h-11 w-full items-center justify-between gap-3 px-3 sm:px-4 lg:px-6">
+      <div className="flex h-11 w-full items-center justify-between gap-2 px-3 sm:gap-3 sm:px-4 lg:px-6">
+        <div className="flex min-w-0 flex-1 items-center gap-2">
         <Link
           href="/dashboard"
           className="flex shrink-0 items-center gap-2 transition hover:opacity-90"
         >
           <img src="/favicon.svg" alt="" className="h-8 w-8" aria-hidden />
-          <span className="flex flex-col">
+          <span className="hidden sm:flex sm:flex-col">
             <span className="text-fire text-base font-semibold leading-tight">
               PodFire
             </span>
-            <span className="text-[10px] font-normal text-[color:var(--gl-text-muted)] leading-tight">
+            <span className="hidden text-[10px] font-normal text-[color:var(--gl-text-muted)] leading-tight sm:block">
               Deployment platform
             </span>
           </span>
         </Link>
+        </div>
 
-        <div className="flex items-center gap-2">
-          <ThemeSwitch />
+        <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
+          <button
+            type="button"
+            onClick={() => setMobileMenuOpen(true)}
+            className="flex shrink-0 items-center justify-center rounded-lg p-2 text-[color:var(--gl-text-muted)] transition hover:bg-[var(--gl-hover)] hover:text-[color:var(--gl-text)] md:hidden"
+            aria-label="Open menu"
+          >
+            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          </button>
+          <span className="hidden sm:inline-flex">
+            <ThemeSwitch />
+          </span>
           <Link
             href="/dashboard/apps/new"
-            className="btn-fire rounded-lg px-3 py-2 text-sm font-medium shadow-sm transition"
+            className="btn-fire hidden items-center rounded-lg px-2.5 py-2 text-sm font-medium shadow-sm transition sm:flex sm:px-3"
           >
-            Create App
+            <span className="sm:inline">Create App</span>
           </Link>
-          <div className="relative" ref={ref}>
+          <div className="relative hidden sm:block" ref={ref}>
             <button
               type="button"
               onClick={() => setProfileOpen((o) => !o)}

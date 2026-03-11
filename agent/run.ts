@@ -35,6 +35,7 @@ type DeployPayload = {
   memoryLimit?: string | null;
   entryCommand?: string | null;
   buildCommand?: string | null;
+  outputDirectory?: string | null;
   env?: Record<string, string> | null;
 };
 
@@ -117,6 +118,7 @@ function runDeployFromJob(
         copyTemplateToRepo(repoPath, framework, {
           buildCommand: payload.buildCommand ?? undefined,
           entryCommand: payload.entryCommand ?? undefined,
+          outputDirectory: payload.outputDirectory ?? undefined,
         });
         const copied = fs
           .readdirSync(repoPath)

@@ -1,6 +1,6 @@
 "use client";
 
-import {useRef, useEffect} from "react";
+import {useRef, useEffect, useState} from "react";
 import type {Repo, Branch} from "../components/types";
 import {FormAccordion} from "../components/FormAccordion";
 
@@ -46,14 +46,30 @@ export function ApplicationSection({
   setSelectedDomain,
 }: ApplicationSectionProps) {
   const repoDropdownRef = useRef<HTMLDivElement>(null);
+  const domainDropdownRef = useRef<HTMLDivElement>(null);
+  const [domainDropdownOpen, setDomainDropdownOpen] = useState(false);
+
+  useEffect(() => {
+    if (selectedRepo) {
+      const repoName = selectedRepo.split("/").pop() ?? selectedRepo;
+      setName(repoName);
+    }
+  }, [selectedRepo, setName]);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
+      const target = event.target as Node;
       if (
         repoDropdownRef.current &&
-        !repoDropdownRef.current.contains(event.target as Node)
+        !repoDropdownRef.current.contains(target)
       ) {
         setRepoDropdownOpen(false);
+      }
+      if (
+        domainDropdownRef.current &&
+        !domainDropdownRef.current.contains(target)
+      ) {
+        setDomainDropdownOpen(false);
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
@@ -67,19 +83,6 @@ export function ApplicationSection({
       onToggle={onToggle}
       className="bg-gl-input-bg"
     >
-      <div>
-        <label className="mb-1 block text-sm font-medium text-gl-text-muted">
-          App name
-        </label>
-        <input
-          type="text"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder="my-app"
-          className="w-full rounded-lg border border-gl-edge bg-gl-input-bg px-3 py-2 text-gl-text placeholder-gl-text-muted focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
-          required
-        />
-      </div>
       <div ref={repoDropdownRef} className="relative">
         <label className="mb-1 block text-sm font-medium text-gl-text-muted">
           GitHub repository
@@ -150,12 +153,27 @@ export function ApplicationSection({
       </div>
       <div>
         <label className="mb-1 block text-sm font-medium text-gl-text-muted">
+          App name
+        </label>
+        <input
+          type="text"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="my-app"
+          disabled={!selectedRepo}
+          className="w-full rounded-lg border border-gl-edge bg-gl-input-bg px-3 py-2 text-gl-text placeholder-gl-text-muted focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:cursor-not-allowed disabled:opacity-60"
+          required
+        />
+      </div>
+      <div>
+        <label className="mb-1 block text-sm font-medium text-gl-text-muted">
           Branch
         </label>
         <select
           value={branch}
           onChange={(e) => setBranch(e.target.value)}
-          className="w-full rounded-lg border border-gl-edge bg-gl-input-bg px-3 py-2 text-gl-text focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+          disabled={!selectedRepo}
+          className="w-full rounded-lg border border-gl-edge bg-gl-input-bg px-3 py-2 text-gl-text focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {branches.map((b) => (
             <option key={b.name} value={b.name}>
@@ -164,22 +182,77 @@ export function ApplicationSection({
           ))}
         </select>
       </div>
-      <div>
+      <div ref={domainDropdownRef} className="relative">
         <label className="mb-1 block text-sm font-medium text-gl-text-muted">
           Domain
         </label>
-        <select
-          value={selectedDomain}
-          onChange={(e) => setSelectedDomain(e.target.value)}
-          className="w-full rounded-lg border border-gl-edge bg-gl-input-bg px-3 py-2 text-gl-text focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+        <button
+          type="button"
+          onClick={() => selectedRepo && setDomainDropdownOpen((o) => !o)}
+          disabled={!selectedRepo}
+          className="flex w-full items-center justify-between rounded-lg border border-gl-edge bg-gl-input-bg px-3 py-2 text-left text-gl-text focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:cursor-not-allowed disabled:opacity-60"
+          aria-haspopup="listbox"
+          aria-expanded={domainDropdownOpen}
+          aria-label="Select domain"
         >
-          <option value="">Default (&lt;name&gt;.localhost)</option>
-          {domains.map((d) => (
-            <option key={d} value={d}>
-              {d}
-            </option>
-          ))}
-        </select>
+          <span>
+            {selectedDomain ? selectedDomain : "--- Select Domain ---"}
+          </span>
+          <svg
+            className={`h-4 w-4 shrink-0 text-gl-text-muted transition-transform ${domainDropdownOpen ? "rotate-180" : ""}`}
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M19 9l-7 7-7-7"
+            />
+          </svg>
+        </button>
+        {domainDropdownOpen && (
+          <ul
+            className="absolute z-10 mt-1 max-h-52 w-full overflow-auto rounded-lg border border-gl-edge bg-gl-card py-1 shadow-lg"
+            role="listbox"
+          >
+            <li role="option" aria-selected={!selectedDomain}>
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedDomain("");
+                  setDomainDropdownOpen(false);
+                }}
+                className={`w-full px-3 py-2.5 text-left text-sm transition ${
+                  !selectedDomain
+                    ? "bg-primary/10 text-primary"
+                    : "text-gl-text hover:bg-gl-hover"
+                }`}
+              >
+                --- Select Domain ---
+              </button>
+            </li>
+            {domains.map((d) => (
+              <li key={d} role="option" aria-selected={selectedDomain === d}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedDomain(d);
+                    setDomainDropdownOpen(false);
+                  }}
+                  className={`w-full px-3 py-2.5 text-left text-sm transition ${
+                    selectedDomain === d
+                      ? "bg-primary/10 text-primary"
+                      : "text-gl-text hover:bg-gl-hover"
+                  }`}
+                >
+                  {d}
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
         <p className="mt-1 text-xs text-gl-text-muted">
           Domains from Admin settings → DNS. Leave default for local routing
           only.

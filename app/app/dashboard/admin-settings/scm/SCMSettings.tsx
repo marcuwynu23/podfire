@@ -144,13 +144,13 @@ export function SCMSettings() {
         </p>
       )}
 
-      <section className="rounded-native border border-gl-edge bg-gl-card p-6 shadow-sm">
+      <section className="rounded-native border border-gl-edge bg-gl-card p-4 shadow-sm sm:p-6">
         <h2 className="text-lg font-semibold text-gl-text">Default SCM</h2>
         <p className="mt-1 text-sm text-gl-text-muted">
           Choose which source control provider to use by default for OAuth and
           repository operations.
         </p>
-        <div className="mt-4 flex gap-6">
+        <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:gap-6">
           <label className="flex cursor-pointer items-center gap-2">
             <input
               type="radio"
@@ -174,7 +174,7 @@ export function SCMSettings() {
         </div>
       </section>
 
-      <section className="rounded-native border border-gl-edge bg-gl-card p-6 shadow-sm">
+      <section className="rounded-native border border-gl-edge bg-gl-card p-4 shadow-sm sm:p-6">
         <h2 className="text-lg font-semibold text-gl-text">GitHub OAuth</h2>
         <p className="mt-1 text-sm text-gl-text-muted">
           Client ID and Client Secret for GitHub login. Callback URL is from .env
@@ -218,7 +218,7 @@ export function SCMSettings() {
         </div>
       </section>
 
-      <section className="rounded-native border border-gl-edge bg-gl-card p-6 shadow-sm">
+      <section className="rounded-native border border-gl-edge bg-gl-card p-4 shadow-sm sm:p-6">
         <h2 className="text-lg font-semibold text-gl-text">GitLab OAuth</h2>
         <p className="mt-1 text-sm text-gl-text-muted">
           Application ID and Secret for GitLab OAuth. Configure an OAuth

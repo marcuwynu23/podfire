@@ -1,6 +1,27 @@
 "use client";
 
 import {useState, useEffect} from "react";
+import {YamlEditor} from "./YamlEditor";
+
+type ConfirmAction = "update" | "restart" | "remove" | null;
+
+const CONFIRM_MESSAGES: Record<
+  Exclude<ConfirmAction, null>,
+  {title: string; body: string}
+> = {
+  update: {
+    title: "Save & Start Gateway",
+    body: "Apply this configuration and start the gateway? Your apps will be reachable once the stack is up.",
+  },
+  restart: {
+    title: "Restart Gateway",
+    body: "Remove the current gateway stack and redeploy with the configuration above. There may be a short period when apps are unreachable.",
+  },
+  remove: {
+    title: "Stop Gateway",
+    body: "Stop the gateway? All apps will be unreachable until you start it again.",
+  },
+};
 
 export function GatewayActions() {
   const [yaml, setYaml] = useState("");
@@ -17,6 +38,16 @@ export function GatewayActions() {
     "idle" | "loading" | "success" | "error"
   >("idle");
   const [message, setMessage] = useState<string | null>(null);
+  const [confirmAction, setConfirmAction] = useState<ConfirmAction>(null);
+
+  useEffect(() => {
+    if (!confirmAction) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setConfirmAction(null);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [confirmAction]);
 
   useEffect(() => {
     let cancelled = false;
@@ -56,6 +87,11 @@ export function GatewayActions() {
       setMessage("Configuration is empty.");
       return;
     }
+    setConfirmAction("update");
+  }
+
+  async function runUpdate() {
+    setConfirmAction(null);
     setUpdateState("loading");
     setRestartState("idle");
     setRemoveState("idle");
@@ -75,6 +111,11 @@ export function GatewayActions() {
       setMessage("Configuration is empty. Load or paste YAML first.");
       return;
     }
+    setConfirmAction("restart");
+  }
+
+  async function runRestart() {
+    setConfirmAction(null);
     setRestartState("loading");
     setUpdateState("idle");
     setRemoveState("idle");
@@ -97,7 +138,12 @@ export function GatewayActions() {
     }
   }
 
-  async function handleRemove() {
+  function handleRemove() {
+    setConfirmAction("remove");
+  }
+
+  async function runRemove() {
+    setConfirmAction(null);
     setRemoveState("loading");
     setUpdateState("idle");
     setRestartState("idle");
@@ -123,11 +169,58 @@ export function GatewayActions() {
     restartState === "error" ||
     removeState === "error";
 
+  function onConfirm() {
+    if (confirmAction === "update") runUpdate();
+    else if (confirmAction === "restart") runRestart();
+    else if (confirmAction === "remove") runRemove();
+  }
+
   return (
-    <div className="space-y-6">
+    <div className="min-w-0 space-y-6">
+      {confirmAction && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-gl-overlay p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="confirm-title"
+          onClick={() => setConfirmAction(null)}
+        >
+          <div
+            className="w-full max-w-md max-h-[90vh] overflow-y-auto rounded-xl border border-gl-edge bg-gl-card p-4 shadow-lg sm:p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 id="confirm-title" className="text-lg font-medium text-gl-text">
+              {CONFIRM_MESSAGES[confirmAction].title}
+            </h3>
+            <p className="mt-2 text-sm text-gl-text-muted">
+              {CONFIRM_MESSAGES[confirmAction].body}
+            </p>
+            <div className="mt-6 flex flex-wrap justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setConfirmAction(null)}
+                className="rounded-xl border border-gl-edge bg-gl-input-bg px-4 py-2 text-sm font-medium text-gl-text transition hover:bg-gl-hover"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={onConfirm}
+                className={
+                  confirmAction === "remove"
+                    ? "btn-danger rounded-xl border px-4 py-2 text-sm font-medium transition"
+                    : "rounded-xl bg-primary px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-primary-hover"
+                }
+              >
+                Confirm
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <div
         id="gateway-config"
-        className="rounded-native border border-gl-edge bg-gl-card p-6 shadow-sm"
+        className="w-full overflow-hidden rounded-native border border-gl-edge bg-gl-card p-4 shadow-sm sm:p-6"
       >
         <h2 className="mb-2 text-lg font-medium text-gl-text">Configuration</h2>
         <p className="mb-4 text-sm text-gl-text-muted">
@@ -144,15 +237,15 @@ export function GatewayActions() {
         )}
         {(yamlLoadState === "loaded" || yamlLoadState === "error") && (
           <>
-            <textarea
-              value={yaml}
-              onChange={(e) => setYaml(e.target.value)}
-              placeholder="# Paste or edit Traefik stack YAML..."
-              rows={18}
-              className="mt-2 w-full rounded-lg border border-gl-edge bg-gl-input-bg px-3 py-2 font-mono text-sm text-gl-text placeholder-gl-text-muted focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/30"
-              spellCheck={false}
-            />
-            <div className="mt-4 flex flex-wrap items-center gap-3">
+            <div className="mt-2 w-full min-w-0 max-w-full overflow-hidden">
+              <YamlEditor
+                value={yaml}
+                onChange={setYaml}
+                placeholder="# Paste or edit Traefik stack YAML..."
+                aria-label="Traefik stack YAML"
+              />
+            </div>
+            <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end sm:gap-3">
               <button
                 type="button"
                 onClick={handleUpdate}
@@ -161,7 +254,7 @@ export function GatewayActions() {
                   restartState === "loading" ||
                   removeState === "loading"
                 }
-                className="rounded-xl bg-primary px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-primary-hover disabled:opacity-50"
+                className="w-full rounded-xl bg-primary px-4 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-primary-hover disabled:opacity-50 sm:w-auto sm:py-2"
               >
                 {updateState === "loading"
                   ? "Updating…"
@@ -175,7 +268,7 @@ export function GatewayActions() {
                   restartState === "loading" ||
                   removeState === "loading"
                 }
-                className="rounded-xl border border-gl-edge bg-gl-input-bg px-4 py-2 text-sm font-medium text-gl-text transition hover:bg-gl-hover disabled:opacity-50"
+                className="w-full rounded-xl border border-gl-edge bg-gl-input-bg px-4 py-2.5 text-sm font-medium text-gl-text transition hover:bg-gl-hover disabled:opacity-50 sm:w-auto sm:py-2"
               >
                 {restartState === "loading" ? "Restarting…" : "Restart Gateway"}
               </button>
@@ -187,7 +280,7 @@ export function GatewayActions() {
                   restartState === "loading" ||
                   removeState === "loading"
                 }
-                className="rounded-xl border border-red-500/40 bg-red-500/10 px-4 py-2 text-sm font-medium text-red-300 transition hover:bg-red-500/20 disabled:opacity-50"
+                className="btn-danger w-full rounded-xl border px-4 py-2.5 text-sm font-medium transition disabled:opacity-50 sm:w-auto sm:py-2"
               >
                 {removeState === "loading" ? "Stopping..." : "Stop Gateway"}
               </button>

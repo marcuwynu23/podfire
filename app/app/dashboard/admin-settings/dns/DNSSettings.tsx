@@ -128,7 +128,7 @@ export function DNSSettings() {
   const set = (key: string) => status?.[key]?.set ?? false;
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} className="min-w-0 space-y-6">
       {message && (
         <p
           className={`rounded-native-sm border px-4 py-2 text-sm ${
@@ -141,82 +141,147 @@ export function DNSSettings() {
         </p>
       )}
 
-      <section className="rounded-native border border-gl-edge bg-gl-card p-6 shadow-sm">
+      <section className="min-w-0 overflow-hidden rounded-native border border-gl-edge bg-gl-card p-4 shadow-sm sm:p-6">
         <h2 className="text-lg font-semibold text-gl-text">DNS & domains</h2>
         <p className="mt-1 text-sm text-gl-text-muted">
           Domains to manage. Set SSL/TLS per domain: Let's Encrypt or Cloudflare.
         </p>
-        <div className="mt-4 overflow-x-auto">
-          <table className="w-full min-w-[320px] text-sm">
-            <thead>
-              <tr className="text-left text-gl-text-muted">
-                <th className="pb-2 font-medium">Domain</th>
-                <th className="pb-2 font-medium">SSL / TLS</th>
-                <th className="w-10 pb-2"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((row, i) => (
-                <tr key={i} className="border-t border-gl-edge">
-                  <td className="py-2 pr-2">
-                    <input
-                      type="text"
-                      value={row.domain}
-                      onChange={(e) => setRowDomain(i, e.target.value)}
-                      placeholder="example.com"
-                      className="w-full rounded border border-gl-edge bg-gl-input-bg px-3 py-1.5 text-gl-text placeholder-gl-text-muted focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30"
-                    />
-                  </td>
-                  <td className="py-2 pr-2">
-                    <div className="flex flex-wrap gap-3">
-                      <label className="flex cursor-pointer items-center gap-1.5">
-                        <input
-                          type="radio"
-                          name={`ssl-${i}`}
-                          checked={row.ssl === "letsencrypt"}
-                          onChange={() => setRowSsl(i, "letsencrypt")}
-                          className="border-gl-edge text-primary focus:ring-primary"
-                        />
-                        <span className="text-gl-text">Let's Encrypt</span>
-                      </label>
-                      <label className="flex cursor-pointer items-center gap-1.5">
-                        <input
-                          type="radio"
-                          name={`ssl-${i}`}
-                          checked={row.ssl === "cloudflare"}
-                          onChange={() => setRowSsl(i, "cloudflare")}
-                          className="border-gl-edge text-primary focus:ring-primary"
-                        />
-                        <span className="text-gl-text">Cloudflare</span>
-                      </label>
-                    </div>
-                  </td>
-                  <td className="py-2 pl-2">
-                    <button
-                      type="button"
-                      onClick={() => removeRow(i)}
-                      disabled={rows.length <= 1}
-                      className="text-gl-text-muted hover:text-red-400 disabled:opacity-40"
-                      aria-label="Remove row"
-                    >
-                      ×
-                    </button>
-                  </td>
+        <div className="mt-4 min-w-0">
+          {/* Mobile: list of cards */}
+          <ul className="space-y-3 sm:hidden" role="list">
+            {rows.map((row, i) => (
+              <li
+                key={i}
+                className="rounded-lg border border-gl-edge bg-gl-input-bg/50 p-3 space-y-3"
+              >
+                <div>
+                  <span className="text-xs font-medium text-gl-text-muted">
+                    Domain
+                  </span>
+                  <input
+                    type="text"
+                    value={row.domain}
+                    onChange={(e) => setRowDomain(i, e.target.value)}
+                    placeholder="example.com"
+                    className="mt-1 w-full rounded border border-gl-edge bg-gl-input-bg px-3 py-1.5 text-sm text-gl-text placeholder-gl-text-muted focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30"
+                  />
+                </div>
+                <div>
+                  <span className="text-xs font-medium text-gl-text-muted">
+                    SSL / TLS
+                  </span>
+                  <div className="mt-1.5 flex flex-wrap gap-3">
+                    <label className="flex cursor-pointer items-center gap-1.5">
+                      <input
+                        type="radio"
+                        name={`ssl-${i}`}
+                        checked={row.ssl === "letsencrypt"}
+                        onChange={() => setRowSsl(i, "letsencrypt")}
+                        className="border-gl-edge text-primary focus:ring-primary"
+                      />
+                      <span className="text-sm text-gl-text">Let's Encrypt</span>
+                    </label>
+                    <label className="flex cursor-pointer items-center gap-1.5">
+                      <input
+                        type="radio"
+                        name={`ssl-${i}`}
+                        checked={row.ssl === "cloudflare"}
+                        onChange={() => setRowSsl(i, "cloudflare")}
+                        className="border-gl-edge text-primary focus:ring-primary"
+                      />
+                      <span className="text-sm text-gl-text">Cloudflare</span>
+                    </label>
+                  </div>
+                </div>
+                <div className="flex justify-end pt-1">
+                  <button
+                    type="button"
+                    onClick={() => removeRow(i)}
+                    disabled={rows.length <= 1}
+                    className="text-sm text-gl-text-muted hover:text-red-400 disabled:opacity-40"
+                    aria-label="Remove domain"
+                  >
+                    Remove
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+
+          {/* Desktop: table */}
+          <div className="hidden overflow-x-auto sm:block">
+            <table className="w-full min-w-[320px] text-sm">
+              <thead>
+                <tr className="text-left text-gl-text-muted">
+                  <th className="pb-2 font-medium">Domain</th>
+                  <th className="pb-2 font-medium">SSL / TLS</th>
+                  <th className="w-10 pb-2"></th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {rows.map((row, i) => (
+                  <tr key={i} className="border-t border-gl-edge">
+                    <td className="py-2 pr-2">
+                      <input
+                        type="text"
+                        value={row.domain}
+                        onChange={(e) => setRowDomain(i, e.target.value)}
+                        placeholder="example.com"
+                        className="w-full rounded border border-gl-edge bg-gl-input-bg px-3 py-1.5 text-gl-text placeholder-gl-text-muted focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30"
+                      />
+                    </td>
+                    <td className="py-2 pr-2">
+                      <div className="flex flex-wrap gap-3">
+                        <label className="flex cursor-pointer items-center gap-1.5">
+                          <input
+                            type="radio"
+                            name={`ssl-${i}`}
+                            checked={row.ssl === "letsencrypt"}
+                            onChange={() => setRowSsl(i, "letsencrypt")}
+                            className="border-gl-edge text-primary focus:ring-primary"
+                          />
+                          <span className="text-gl-text">Let's Encrypt</span>
+                        </label>
+                        <label className="flex cursor-pointer items-center gap-1.5">
+                          <input
+                            type="radio"
+                            name={`ssl-${i}`}
+                            checked={row.ssl === "cloudflare"}
+                            onChange={() => setRowSsl(i, "cloudflare")}
+                            className="border-gl-edge text-primary focus:ring-primary"
+                          />
+                          <span className="text-gl-text">Cloudflare</span>
+                        </label>
+                      </div>
+                    </td>
+                    <td className="py-2 pl-2">
+                      <button
+                        type="button"
+                        onClick={() => removeRow(i)}
+                        disabled={rows.length <= 1}
+                        className="text-gl-text-muted hover:text-red-400 disabled:opacity-40"
+                        aria-label="Remove row"
+                      >
+                        ×
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
           <button
             type="button"
             onClick={addRow}
-            className="mt-2 text-sm text-primary hover:underline"
+            className="mt-3 w-full rounded-lg border border-dashed border-gl-edge bg-gl-input-bg/50 py-2.5 text-sm font-medium text-primary transition hover:bg-gl-hover sm:mt-2 sm:w-auto sm:border-0 sm:bg-transparent sm:py-0 sm:font-normal sm:hover:bg-transparent sm:hover:underline"
           >
             + Add domain
           </button>
         </div>
       </section>
 
-      <section className="rounded-native border border-gl-edge bg-gl-card p-6 shadow-sm">
+      <section className="min-w-0 overflow-hidden rounded-native border border-gl-edge bg-gl-card p-4 shadow-sm sm:p-6">
         <h2 className="text-lg font-semibold text-gl-text">Cloudflare (for Cloudflare SSL domains)</h2>
         <p className="mt-1 text-sm text-gl-text-muted">
           API token and origin certificates are used only for domains that have SSL set to Cloudflare.
@@ -282,11 +347,11 @@ export function DNSSettings() {
         )}
       </section>
 
-      <div className="flex justify-end">
+      <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
         <button
           type="submit"
           disabled={saving}
-          className="rounded-xl bg-primary px-6 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-primary-hover disabled:opacity-50"
+          className="w-full rounded-xl bg-primary px-6 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-primary-hover disabled:opacity-50 sm:w-auto"
         >
           {saving ? "Saving…" : "Save"}
         </button>

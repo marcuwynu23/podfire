@@ -87,7 +87,7 @@ export function LogsViewer({
       <pre
         ref={preRef}
         onScroll={handleScroll}
-        className="scrollbar-thin max-h-96 overflow-auto rounded-native-sm border border-gl-edge bg-gl-input-bg p-4 font-mono text-sm leading-relaxed text-gl-text-muted whitespace-pre-wrap"
+        className="logs-viewer-scroll max-h-96 overflow-auto rounded-native-sm border border-gl-edge bg-gl-input-bg p-4 font-mono text-sm leading-relaxed text-gl-text-muted whitespace-pre-wrap"
       >
         {logs || "No logs yet."}
       </pre>

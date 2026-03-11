@@ -49,6 +49,7 @@ export async function PATCH(
     memoryLimit?: string | null;
     entryCommand?: string | null;
     buildCommand?: string | null;
+    outputDirectory?: string | null;
     env?: Record<string, string> | null;
     deployMode?: "manual" | "auto";
     diagnosticsEnabled?: boolean;
@@ -58,7 +59,7 @@ export async function PATCH(
   } catch {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
-  const { port, hostPort, replicas, domain, cpuLimit, memoryLimit, entryCommand, buildCommand, env, deployMode, diagnosticsEnabled } = body;
+  const { port, hostPort, replicas, domain, cpuLimit, memoryLimit, entryCommand, buildCommand, outputDirectory, env, deployMode, diagnosticsEnabled } = body;
   if (port !== undefined && (typeof port !== "number" || port < 1 || port > 65535)) {
     return NextResponse.json({ error: "port must be 1-65535" }, { status: 400 });
   }
@@ -68,7 +69,7 @@ export async function PATCH(
   if (replicas !== undefined && (typeof replicas !== "number" || replicas < 1 || replicas > 32)) {
     return NextResponse.json({ error: "replicas must be 1-32" }, { status: 400 });
   }
-  const data: { port?: number | null; hostPort?: number | null; replicas?: number; domain?: string | null; cpuLimit?: string | null; memoryLimit?: string | null; entryCommand?: string | null; buildCommand?: string | null; env?: string | null; deployMode?: string; diagnosticsEnabled?: boolean } = {};
+  const data: { port?: number | null; hostPort?: number | null; replicas?: number; domain?: string | null; cpuLimit?: string | null; memoryLimit?: string | null; entryCommand?: string | null; buildCommand?: string | null; outputDirectory?: string | null; env?: string | null; deployMode?: string; diagnosticsEnabled?: boolean } = {};
   if (port !== undefined) data.port = port ?? null;
   if (hostPort !== undefined) data.hostPort = hostPort ?? null;
   if (replicas !== undefined) data.replicas = replicas;
@@ -77,6 +78,7 @@ export async function PATCH(
   if (memoryLimit !== undefined) data.memoryLimit = typeof memoryLimit === "string" ? memoryLimit.trim() || null : null;
   if (entryCommand !== undefined) data.entryCommand = entryCommand?.trim() || null;
   if (buildCommand !== undefined) data.buildCommand = buildCommand?.trim() || null;
+  if (outputDirectory !== undefined) data.outputDirectory = outputDirectory?.trim() || null;
   if (env !== undefined) data.env = env && typeof env === "object" ? JSON.stringify(env) : null;
   if (deployMode !== undefined) data.deployMode = deployMode === "auto" ? "auto" : "manual";
   if (diagnosticsEnabled !== undefined) data.diagnosticsEnabled = Boolean(diagnosticsEnabled);

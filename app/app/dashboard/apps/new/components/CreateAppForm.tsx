@@ -24,6 +24,7 @@ export function CreateAppForm({
   const [name, setName] = useState("");
   const [entryCommand, setEntryCommand] = useState("");
   const [buildCommand, setBuildCommand] = useState("");
+  const [outputDirectory, setOutputDirectory] = useState("");
   const [envEntries, setEnvEntries] = useState<{key: string; value: string}[]>([
     {key: "", value: ""},
   ]);
@@ -126,6 +127,7 @@ export function CreateAppForm({
           domain: selectedDomain.trim() || undefined,
           entryCommand: entryCommand.trim() || undefined,
           buildCommand: buildCommand.trim() || undefined,
+          outputDirectory: outputDirectory.trim() || undefined,
           env: buildEnvObject(envEntries) ?? undefined,
           deployMode: "manual",
         }),
@@ -179,6 +181,8 @@ export function CreateAppForm({
           setEntryCommand={setEntryCommand}
           buildCommand={buildCommand}
           setBuildCommand={setBuildCommand}
+          outputDirectory={outputDirectory}
+          setOutputDirectory={setOutputDirectory}
         />
         <EnvSection
           open={accordionOpen.env}
