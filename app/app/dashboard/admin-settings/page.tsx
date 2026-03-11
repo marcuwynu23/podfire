@@ -39,7 +39,7 @@ export default async function AdminSettingsPage() {
   const services = await getDeployedServices(userId);
 
   return (
-    <div className="w-full space-y-6">
+    <div className="min-w-0 w-full space-y-4 sm:space-y-6">
       <div>
         <Link
           href="/dashboard"
@@ -47,7 +47,7 @@ export default async function AdminSettingsPage() {
         >
           ← Dashboard
         </Link>
-        <h1 className="mt-1 text-2xl font-semibold tracking-tight text-gl-text">
+        <h1 className="mt-1 text-xl font-semibold tracking-tight text-gl-text sm:text-2xl">
           Admin settings
         </h1>
         <p className="mt-1 text-sm text-gl-text-muted">

@@ -9,6 +9,8 @@ type BuildSectionProps = {
   setEntryCommand: (v: string) => void;
   buildCommand: string;
   setBuildCommand: (v: string) => void;
+  outputDirectory: string;
+  setOutputDirectory: (v: string) => void;
 };
 
 export function BuildSection({
@@ -18,6 +20,8 @@ export function BuildSection({
   setEntryCommand,
   buildCommand,
   setBuildCommand,
+  outputDirectory,
+  setOutputDirectory,
 }: BuildSectionProps) {
   return (
     <FormAccordion
@@ -55,6 +59,21 @@ export function BuildSection({
           />
           <p className="mt-1 text-xs text-gl-text-muted">
             Run during Docker build (overrides template default).
+          </p>
+        </div>
+        <div>
+          <label className="mb-1 block text-sm font-medium text-gl-text-muted">
+            Output directory
+          </label>
+          <input
+            type="text"
+            value={outputDirectory}
+            onChange={(e) => setOutputDirectory(e.target.value)}
+            placeholder="e.g. dist or .next"
+            className="w-full rounded-lg border border-gl-edge bg-gl-input-bg px-3 py-2 text-gl-text placeholder-gl-text-muted focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+          />
+          <p className="mt-1 text-xs text-gl-text-muted">
+            Path where the build writes output (used in Docker COPY). Leave empty for template default (e.g. dist for Vite, .next for Next.js).
           </p>
         </div>
       </div>

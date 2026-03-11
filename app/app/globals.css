@@ -15,6 +15,9 @@
   --gl-hover: rgba(255, 255, 255, 0.05);
   --primary: #ea580c;
   --primary-hover: #c2410c;
+  --gl-danger: #f87171;
+  --gl-danger-bg: rgba(248, 113, 113, 0.1);
+  --gl-danger-hover: rgba(248, 113, 113, 0.2);
   --fire-from: #ea580c;
   --fire-via: #f97316;
   --fire-to: #dc2626;
@@ -32,6 +35,19 @@ html[data-theme="light"] {
   --gl-input-bg: rgba(0, 0, 0, 0.06);
   --gl-overlay: rgba(0, 0, 0, 0.4);
   --gl-hover: rgba(0, 0, 0, 0.04);
+  --gl-danger: #dc2626;
+  --gl-danger-bg: rgba(220, 38, 38, 0.08);
+  --gl-danger-hover: rgba(220, 38, 38, 0.15);
+}
+
+/* Destructive button – theme-aware */
+.btn-danger {
+  border-color: var(--gl-danger) !important;
+  background-color: var(--gl-danger-bg) !important;
+  color: var(--gl-danger) !important;
+}
+.btn-danger:hover:not(:disabled) {
+  background-color: var(--gl-danger-hover) !important;
 }
 
 body {
@@ -77,6 +93,84 @@ body {
 
 [data-theme="light"] .scrollbar-thin::-webkit-scrollbar-thumb:hover {
   background: rgba(0, 0, 0, 0.3);
+}
+
+/* Log viewer scrollbar: thin, theme-aware, stable gutter */
+.logs-viewer-scroll {
+  scrollbar-width: thin;
+  scrollbar-gutter: stable;
+  scrollbar-color: rgba(255, 255, 255, 0.25) transparent;
+}
+.logs-viewer-scroll::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+.logs-viewer-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.logs-viewer-scroll::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.25);
+  border-radius: 4px;
+}
+.logs-viewer-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.4);
+}
+html[data-theme="light"] .logs-viewer-scroll {
+  scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+}
+html[data-theme="light"] .logs-viewer-scroll::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.2);
+}
+html[data-theme="light"] .logs-viewer-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.35);
+}
+
+/* Gateway YAML syntax highlighter – theme responsive via CSS variables */
+.gateway-yml {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  max-width: 100%;
+}
+.gateway-yml .token.comment,
+.gateway-yml .token.prolog,
+.gateway-yml .token.doctype,
+.gateway-yml .token.cdata {
+  color: var(--gl-text-muted);
+}
+.gateway-yml .token.punctuation {
+  color: var(--gl-text-muted);
+}
+.gateway-yml .token.key,
+.gateway-yml .token.property,
+.gateway-yml .token.tag,
+.gateway-yml .token.attr-name {
+  color: var(--primary);
+}
+.gateway-yml .token.string,
+.gateway-yml .token.attr-value {
+  color: var(--gl-text);
+}
+.gateway-yml .token.number,
+.gateway-yml .token.boolean {
+  color: var(--primary);
+  opacity: 0.9;
+}
+.gateway-yml .token.operator,
+.gateway-yml .token.entity,
+.gateway-yml .token.url {
+  color: var(--gl-text);
+}
+.gateway-yml .token.keyword {
+  color: var(--primary);
+}
+.gateway-yml .token.atrule {
+  color: var(--gl-text-muted);
+}
+.gateway-yml .token.regex,
+.gateway-yml .token.important,
+.gateway-yml .token.variable {
+  color: var(--gl-text);
 }
 
 /* Fire gradient: literal values so they always apply (no var() dependency) */

@@ -8,12 +8,12 @@ type Props = {
 
 export function InfoTab({ repoUrl, branch, stackName, currentReplicas, appUrl }: Props) {
   return (
-    <div className="p-6">
+    <div className="p-4 sm:p-6">
       <h2 className="text-base font-semibold text-gl-text">Information</h2>
       <p className="mt-0.5 text-sm text-gl-text-muted">
         Repository and runtime details for this app.
       </p>
-      <dl className="mt-6 grid gap-4 sm:grid-cols-2">
+      <dl className="mt-4 grid gap-4 sm:mt-6 sm:grid-cols-2">
         <div>
           <dt className="text-xs font-medium uppercase tracking-wider text-gl-text-muted">
             Repository

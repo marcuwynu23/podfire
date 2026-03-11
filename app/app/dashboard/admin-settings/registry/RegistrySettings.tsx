@@ -154,12 +154,12 @@ export function RegistrySettings() {
         </p>
       )}
 
-      <section className="rounded-native border border-gl-edge bg-gl-card p-6 shadow-sm">
+      <section className="rounded-native border border-gl-edge bg-gl-card p-4 shadow-sm sm:p-6">
         <h2 className="text-lg font-semibold text-gl-text">Default registry</h2>
         <p className="mt-1 text-sm text-gl-text-muted">
           Choose which registry to use by default when pushing images.
         </p>
-        <div className="mt-4 flex gap-6">
+        <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:gap-6">
           <label className="flex cursor-pointer items-center gap-2">
             <input
               type="radio"
@@ -183,7 +183,7 @@ export function RegistrySettings() {
         </div>
       </section>
 
-      <section className="rounded-native border border-gl-edge bg-gl-card p-6 shadow-sm">
+      <section className="rounded-native border border-gl-edge bg-gl-card p-4 shadow-sm sm:p-6">
         <h2 className="text-lg font-semibold text-gl-text">Docker registry</h2>
         <p className="mt-1 text-sm text-gl-text-muted">
           Registry host for pushing images (e.g. registry.example.com). Leave
@@ -241,7 +241,7 @@ export function RegistrySettings() {
         </div>
       </section>
 
-      <section className="rounded-native border border-gl-edge bg-gl-card p-6 shadow-sm">
+      <section className="rounded-native border border-gl-edge bg-gl-card p-4 shadow-sm sm:p-6">
         <h2 className="text-lg font-semibold text-gl-text">Harbor registry</h2>
         <p className="mt-1 text-sm text-gl-text-muted">
           Harbor registry host (e.g. harbor.example.com). Leave empty to not use

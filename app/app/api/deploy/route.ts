@@ -122,6 +122,7 @@ export async function POST(request: Request) {
     memoryLimit: (service as { memoryLimit?: string | null }).memoryLimit ?? null,
     entryCommand: service.entryCommand ?? null,
     buildCommand: service.buildCommand ?? null,
+    outputDirectory: (service as { outputDirectory?: string | null }).outputDirectory ?? null,
     env: env ?? null,
   };
 

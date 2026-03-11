@@ -41,6 +41,7 @@ export function getTemplatePath(framework: Exclude<Framework, "custom">): string
 export type TemplateOptions = {
   buildCommand?: string | null;
   entryCommand?: string | null;
+  outputDirectory?: string | null;
 };
 
 export function copyTemplateToRepo(
@@ -51,10 +52,16 @@ export function copyTemplateToRepo(
   const src = getTemplatePath(framework);
   let content = fs.readFileSync(src, "utf-8");
   const buildCmd = options?.buildCommand?.trim() || DEFAULT_BUILD[framework];
+  const outputDir = options?.outputDirectory?.trim() || (framework === "vite" ? "dist" : framework === "nextjs" ? ".next" : "");
   const entryCmd = options?.entryCommand?.trim()
     ? entryCommandToJson(options.entryCommand)
-    : DEFAULT_ENTRY_CMD[framework];
+    : framework === "vite" && outputDir
+      ? JSON.stringify(["serve", "-s", outputDir, "-l", "0.0.0.0:3000"])
+      : DEFAULT_ENTRY_CMD[framework];
 
+  if (outputDir && content.includes("__OUTPUT_DIR__")) {
+    content = content.replace(/__OUTPUT_DIR__/g, outputDir);
+  }
   if (content.includes("__BUILD_RUN__")) {
     const runLine = buildCmd === "true" ? "RUN true" : `RUN ${buildCmd}`;
     content = content.replace("__BUILD_RUN__", runLine);

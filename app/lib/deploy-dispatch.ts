@@ -60,6 +60,7 @@ export async function buildDeployJob(serviceId: string, userId: string, options?
       memoryLimit: (service as { memoryLimit?: string | null }).memoryLimit ?? null,
       entryCommand: service.entryCommand ?? null,
       buildCommand: service.buildCommand ?? null,
+      outputDirectory: (service as { outputDirectory?: string | null }).outputDirectory ?? null,
       env: env ?? null,
     },
   };

@@ -145,10 +145,10 @@ export function AppDetailTabs({
   }, [service.id, serverStatus, polledStatus, router]);
 
   return (
-    <div className="w-full space-y-6">
+    <div className="min-w-0 w-full space-y-4 sm:space-y-6">
       <div className="rounded-native border border-gl-edge bg-gl-card shadow-sm">
-        <div className="flex flex-wrap items-start justify-between gap-4 border-b border-gl-edge p-6">
-          <div>
+        <div className="flex flex-col gap-4 border-b border-gl-edge p-4 sm:flex-row sm:flex-wrap sm:items-start sm:justify-between sm:p-6">
+          <div className="min-w-0 flex-1">
             <Link
               href="/dashboard/apps"
               className="text-sm text-gl-text-muted transition hover:text-gl-text"
@@ -156,25 +156,25 @@ export function AppDetailTabs({
               ← Back to Apps
             </Link>
             <div className="mt-2 flex flex-wrap items-center gap-3">
-              <h1 className="text-2xl font-semibold tracking-tight text-gl-text">
+              <h1 className="min-w-0 truncate text-xl font-semibold tracking-tight text-gl-text sm:text-2xl">
                 {service.name}
               </h1>
               <StatusPill status={status} />
             </div>
-            <p className="mt-1 text-sm text-gl-text-muted">
+            <p className="mt-1 truncate text-sm text-gl-text-muted">
               {service.repoUrl} ·{" "}
               <span className="text-gl-text-muted">{service.branch}</span>
             </p>
           </div>
-          <div className="flex flex-col items-end gap-2">
-            <div className="flex flex-wrap items-center justify-end gap-2">
+          <div className="flex flex-col gap-2 sm:items-end">
+            <div className="flex flex-wrap items-center justify-start gap-2 sm:justify-end">
               {(service as {deployMode?: string}).deployMode === "auto" && (
                 <CheckForUpdatesButton
                   serviceId={service.id}
                   onTriggered={() => router.refresh()}
                 />
               )}
-              <span className="mx-1 h-6 w-px bg-gl-edge" aria-hidden />
+              <span className="mx-1 hidden h-6 w-px bg-gl-edge sm:inline" aria-hidden />
               <span className="text-xs text-gl-text-muted">Replicas</span>
               <input
                 type="number"
@@ -211,7 +211,7 @@ export function AppDetailTabs({
         </div>
 
         <nav
-          className="flex gap-0 border-b border-gl-edge px-6"
+          className="flex gap-0 overflow-x-auto border-b border-gl-edge px-4 scrollbar-thin sm:px-6"
           aria-label="App sections"
         >
           {visibleTabs.map((tab) => (
@@ -219,7 +219,7 @@ export function AppDetailTabs({
               key={tab.id}
               type="button"
               onClick={() => setActiveTab(tab.id)}
-              className={`relative flex items-center gap-2 border-b-2 px-4 py-3.5 text-sm font-medium transition ${
+              className={`relative flex shrink-0 items-center gap-2 border-b-2 px-3 py-3.5 text-sm font-medium transition sm:px-4 ${
                 activeTab === tab.id
                   ? "border-primary text-primary"
                   : "border-transparent text-gl-text-muted hover:border-gl-edge hover:text-gl-text"
@@ -244,7 +244,7 @@ export function AppDetailTabs({
         </nav>
       </div>
 
-      <div className="rounded-native border border-gl-edge bg-gl-card shadow-sm overflow-hidden">
+      <div className="min-w-0 overflow-hidden rounded-native border border-gl-edge bg-gl-card shadow-sm">
         {activeTab === "info" && (
           <InfoTab
             repoUrl={service.repoUrl}
@@ -256,7 +256,7 @@ export function AppDetailTabs({
         )}
 
         {activeTab === "diagnostics" && (
-          <div className="p-6">
+          <div className="p-4 sm:p-6">
             <h2 className="text-base font-semibold text-gl-text">
               Diagnostics
             </h2>
@@ -299,6 +299,9 @@ export function AppDetailTabs({
             }
             buildCommand={
               (service as {buildCommand?: string | null}).buildCommand ?? null
+            }
+            outputDirectory={
+              (service as {outputDirectory?: string | null}).outputDirectory ?? null
             }
             onSaved={() => router.refresh()}
           />

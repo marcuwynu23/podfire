@@ -22,7 +22,7 @@ export default async function AppDetailPage({
   const latestDeployment = service.deployments[0] ?? null;
 
   return (
-    <div className="w-full">
+    <div className="min-w-0 w-full">
       <AppDetailTabs
         service={service}
         deployments={service.deployments}

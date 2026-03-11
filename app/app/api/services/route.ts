@@ -49,6 +49,7 @@ export async function POST(request: Request) {
     hostPort?: number | null;
     entryCommand?: string | null;
     buildCommand?: string | null;
+    outputDirectory?: string | null;
     env?: Record<string, string> | null;
     deployMode?: "manual" | "auto";
   };
@@ -57,7 +58,7 @@ export async function POST(request: Request) {
   } catch {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
-  const { name, repoUrl, branch, domain, port, hostPort, entryCommand, buildCommand, env, deployMode } = body;
+  const { name, repoUrl, branch, domain, port, hostPort, entryCommand, buildCommand, outputDirectory, env, deployMode } = body;
   if (!name || !repoUrl) {
     return NextResponse.json({ error: "name and repoUrl required" }, { status: 400 });
   }
@@ -84,6 +85,7 @@ export async function POST(request: Request) {
       hostPort: hostPort != null && hostPort >= 1 && hostPort <= 65535 ? hostPort : null,
       entryCommand: entryCommand?.trim() || null,
       buildCommand: buildCommand?.trim() || null,
+      outputDirectory: outputDirectory?.trim() || null,
       env: envStr,
       deployMode: mode,
     },

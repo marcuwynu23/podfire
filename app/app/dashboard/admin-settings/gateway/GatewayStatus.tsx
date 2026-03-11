@@ -35,8 +35,8 @@ export function GatewayStatus() {
   }, [refresh]);
 
   return (
-    <div className="rounded-native border border-gl-edge bg-gl-card p-6 shadow-sm">
-      <div className="flex items-center justify-between">
+    <div className="rounded-native border border-gl-edge bg-gl-card p-4 shadow-sm sm:p-6">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="text-lg font-medium text-gl-text">Status</h2>
         <button
           type="button"

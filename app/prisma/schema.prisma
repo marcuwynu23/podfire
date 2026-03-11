@@ -50,6 +50,7 @@ model Service {
   hostPort               Int?     // optional published host port (auto-assigned if null when deploy needs it)
   entryCommand           String?  // e.g. "npm start" or "node server.js"
   buildCommand           String?  // e.g. "npm run build"
+  outputDirectory        String?  // e.g. "dist" or ".next" — build output path for Docker COPY
   env                    String?  // JSON object of env vars for the container
   replicas                Int      @default(1) // number of service replicas (Swarm)
   cpuLimit                String?  // optional Docker CPU limit (e.g. "1.5"); applied per replica
