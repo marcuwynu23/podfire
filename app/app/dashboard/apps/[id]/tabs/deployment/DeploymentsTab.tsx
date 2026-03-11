@@ -3,7 +3,7 @@
 import {useState, useEffect} from "react";
 import type {Deployment} from "@prisma/client";
 import {LogsViewer} from "../../log/LogsViewer";
-import {StatusPill} from "../StatusPill";
+import {StatusPill} from "../props/StatusPill";
 
 type DeploymentWithMeta = Deployment & {
   retryCount?: number;
@@ -83,7 +83,9 @@ export function DeploymentsTab({
     }
   }
 
-  function formatPhaseDurations(phaseDurations: string | null | undefined): string | null {
+  function formatPhaseDurations(
+    phaseDurations: string | null | undefined,
+  ): string | null {
     if (!phaseDurations) return null;
     try {
       const o = JSON.parse(phaseDurations) as Record<string, number>;
@@ -148,7 +150,10 @@ export function DeploymentsTab({
                           </span>
                         )}
                         {retryCount > 0 && (
-                          <span className="inline-flex shrink-0 rounded-md border border-gl-edge bg-gl-input-bg px-2 py-0.5 text-xs text-gl-text-muted" title="Retry attempt">
+                          <span
+                            className="inline-flex shrink-0 rounded-md border border-gl-edge bg-gl-input-bg px-2 py-0.5 text-xs text-gl-text-muted"
+                            title="Retry attempt"
+                          >
                             Retry #{retryCount}
                           </span>
                         )}
@@ -187,7 +192,10 @@ export function DeploymentsTab({
                         )}
                       </div>
                       {phaseSummary && (
-                        <p className="text-xs text-gl-text-muted" title="Phase durations">
+                        <p
+                          className="text-xs text-gl-text-muted"
+                          title="Phase durations"
+                        >
                           {phaseSummary}
                         </p>
                       )}

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CreateAppForm } from "./CreateAppForm";
+import {CreateAppForm} from "./components/CreateAppForm";
 
 export default function NewAppPage() {
   return (
