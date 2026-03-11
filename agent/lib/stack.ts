@@ -16,10 +16,11 @@ export function generateStackYaml(
   stackName: string,
   imageTag: string,
   port: number = 80,
-  options?: { env?: Record<string, string>; replicas?: number }
+  options?: { env?: Record<string, string>; replicas?: number; domain?: string | null }
 ): string {
   const safe = sanitizeForDocker(stackName);
-  const host = `${safe}.localhost`;
+  const domain = options?.domain?.trim();
+  const host = domain ? `${safe}.${domain}` : `${safe}.localhost`;
   const envBlock = envToYaml(options?.env);
   const replicas = Math.min(32, Math.max(1, options?.replicas ?? 1));
   // No published ports: only Traefik publishes 80/443; apps are reached via overlay (see docker-swarm-stack-traefik-gateway.md).

@@ -18,16 +18,19 @@ export async function GET(
   const { id } = await params;
   const service = await prisma.service.findFirst({
     where: { id, userId },
-    select: { stackName: true, name: true, port: true },
+    select: { stackName: true, name: true, port: true, domain: true },
   });
   if (!service) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
   const stackName = service.stackName ?? service.name;
   const port = service.port ?? 80;
+  const domain = service.domain ?? "";
+  const query = new URLSearchParams({ stackName, port: String(port) });
+  if (domain) query.set("domain", domain);
   try {
     const res = await gatewayFetch(
-      `/service-diagnostics?stackName=${encodeURIComponent(stackName)}&port=${port}`,
+      `/service-diagnostics?${query.toString()}`,
       { cache: "no-store" }
     );
     const data = (await res.json()) as { diagnostics?: unknown; error?: string };

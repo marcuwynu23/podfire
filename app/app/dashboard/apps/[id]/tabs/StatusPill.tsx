@@ -8,7 +8,7 @@ export function StatusPill({ status }: { status: string }) {
     pushing: "bg-amber-500/15 text-amber-400 border-amber-500/30",
     deploying: "bg-amber-500/15 text-amber-400 border-amber-500/30",
     queued: "bg-zinc-500/15 text-zinc-400 border-zinc-500/30",
-    idle: "bg-zinc-500/10 text-zinc-500 border-white/10",
+    idle: "bg-zinc-500/10 text-gl-text-muted border-gl-edge",
   };
   const style = styles[s] ?? styles.idle;
   return (

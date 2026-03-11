@@ -7,13 +7,18 @@
  * Run from the agent machine (has Docker access). Outputs clear diagnostics
  * for container config vs Traefik routing.
  */
-import { runServiceDiagnostics } from "../lib/service-diagnostics";
+import {runServiceDiagnostics} from "../lib/service-diagnostics.js";
 
 const stackName = process.argv[2];
-const port = Math.min(65535, Math.max(1, parseInt(process.argv[3] ?? "3000", 10) || 3000));
+const port = Math.min(
+  65535,
+  Math.max(1, parseInt(process.argv[3] ?? "3000", 10) || 3000),
+);
 
 if (!stackName?.trim()) {
-  console.error("Usage: npx tsx scripts/diagnose-service.ts <stackName> [port]");
+  console.error(
+    "Usage: npx tsx scripts/diagnose-service.ts <stackName> [port]",
+  );
   process.exit(1);
 }
 
@@ -54,12 +59,24 @@ if (d.verdict === "container_not_serving") {
   console.log(">>> Likely problem: APP/CONTAINER CONFIGURATION");
   console.log("    - Ensure the app listens on 0.0.0.0 (not 127.0.0.1)");
   console.log("    - Port must match Traefik label (e.g. 3000 Node, 80 Nginx)");
-  console.log("    - Nginx: root/path and listen port; Node: server.listen(port, '0.0.0.0')");
+  console.log(
+    "    - Nginx: root/path and listen port; Node: server.listen(port, '0.0.0.0')",
+  );
 } else if (d.verdict === "traefik_routing") {
   console.log(">>> Likely problem: TRAEFIK ROUTING");
-  console.log("    - Ensure Traefik is on the same Swarm network:", process.env.TRAEFIK_NETWORK ?? "web");
-  console.log("    - Check labels: traefik.enable=true, Host(`" + d.expectedHost + "`), server.port=" + d.expectedPort);
-  console.log("    - Check Traefik logs above for discovery or connection errors");
+  console.log(
+    "    - Ensure Traefik is on the same Swarm network:",
+    process.env.TRAEFIK_NETWORK ?? "web",
+  );
+  console.log(
+    "    - Check labels: traefik.enable=true, Host(`" +
+      d.expectedHost +
+      "`), server.port=" +
+      d.expectedPort,
+  );
+  console.log(
+    "    - Check Traefik logs above for discovery or connection errors",
+  );
 } else if (d.verdict === "service_not_found") {
   console.log(">>> Service not deployed or wrong stack name. Deploy first.");
 }

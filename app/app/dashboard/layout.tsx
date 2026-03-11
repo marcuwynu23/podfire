@@ -1,8 +1,8 @@
 import {redirect} from "next/navigation";
 import {getSessionUser} from "@/lib/auth";
-import {DashboardNav} from "./DashboardNav";
-import {DashboardTopNav} from "./DashboardTopNav";
-import {ThemeProvider} from "./ThemeProvider";
+import {DashboardNav} from "../../components/DashboardNav";
+import {DashboardTopNav} from "../../components/DashboardTopNav";
+import {ThemeProvider} from "../../components/ThemeProvider";
 
 export default async function DashboardLayout({
   children,

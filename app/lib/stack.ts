@@ -8,10 +8,11 @@ const NETWORK = process.env.TRAEFIK_NETWORK ?? "web";
 export function generateStackYaml(
   stackName: string,
   imageTag: string,
-  port: number = 80
+  port: number = 80,
+  domain?: string | null
 ): string {
   const safe = sanitizeForDocker(stackName);
-  const host = `${safe}.localhost`;
+  const host = domain?.trim() ? `${safe}.${domain.trim()}` : `${safe}.localhost`;
   return `version: "3.9"
 
 services:

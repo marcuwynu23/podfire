@@ -30,6 +30,9 @@ const config: Config = {
         "gl-edge": "var(--gl-edge)",
         "gl-text": "var(--gl-text)",
         "gl-text-muted": "var(--gl-text-muted)",
+        "gl-input-bg": "var(--gl-input-bg)",
+        "gl-overlay": "var(--gl-overlay)",
+        "gl-hover": "var(--gl-hover)",
       },
       boxShadow: {
         primary: "0 1px 3px rgba(234, 88, 12, 0.25)",

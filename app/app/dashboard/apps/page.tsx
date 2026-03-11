@@ -28,15 +28,15 @@ export default async function AppsPage() {
         <div>
           <Link
             href="/dashboard"
-            className="text-sm text-zinc-500 transition hover:text-white"
+            className="text-sm text-gl-text-muted transition hover:text-gl-text"
           >
             ← Overview
           </Link>
-          <h1 className="mt-1 text-2xl font-semibold tracking-tight text-white sm:text-3xl">
+          <h1 className="mt-1 text-2xl font-semibold tracking-tight text-gl-text sm:text-3xl">
             Apps
           </h1>
-          <p className="mt-1 text-sm text-zinc-400">
-            Connect GitHub repos and deploy to Docker Swarm. Each app gets a <code className="rounded border border-white/[0.06] bg-black/20 px-1">*.localhost</code> URL when the Gateway is running.
+          <p className="mt-1 text-sm text-gl-text-muted">
+            Connect GitHub repos and deploy to Docker Swarm. Each app gets a <code className="rounded border border-gl-edge bg-gl-input-bg px-1">*.localhost</code> URL when the Gateway is running.
           </p>
         </div>
         <Link
@@ -51,14 +51,14 @@ export default async function AppsPage() {
       </div>
 
       {services.length === 0 ? (
-        <div className="rounded-native border border-white/[0.06] bg-gl-card p-16 text-center shadow-sm">
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-gl-border/50">
-            <svg className="h-7 w-7 text-zinc-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="rounded-native border border-gl-edge bg-gl-card p-16 text-center shadow-sm">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-gl-edge">
+            <svg className="h-7 w-7 text-gl-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
             </svg>
           </div>
-          <h2 className="mt-4 text-lg font-semibold text-white">No apps yet</h2>
-          <p className="mt-2 text-sm text-zinc-400">
+          <h2 className="mt-4 text-lg font-semibold text-gl-text">No apps yet</h2>
+          <p className="mt-2 text-sm text-gl-text-muted">
             Connect a repository to deploy your first app.
           </p>
           <Link

@@ -35,21 +35,21 @@ export function GatewayStatus() {
   }, [refresh]);
 
   return (
-    <div className="rounded-native border border-white/[0.06] bg-gl-card p-6 shadow-sm">
+    <div className="rounded-native border border-gl-edge bg-gl-card p-6 shadow-sm">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-medium text-white">Status</h2>
+        <h2 className="text-lg font-medium text-gl-text">Status</h2>
         <button
           type="button"
           onClick={() => refresh()}
           disabled={status === "checking"}
-          className="text-sm text-zinc-400 hover:text-white disabled:opacity-50"
+          className="text-sm text-gl-text-muted hover:text-gl-text disabled:opacity-50"
         >
           {status === "checking" ? "Checking…" : "Refresh"}
         </button>
       </div>
       <div className="mt-3">
         {status === "checking" && (
-          <p className="text-sm text-zinc-500">Checking…</p>
+          <p className="text-sm text-gl-text-muted">Checking…</p>
         )}
         {status === "running" && (
           <div className="flex flex-wrap items-center gap-3">
@@ -68,7 +68,7 @@ export function GatewayStatus() {
           </div>
         )}
         {status === "stopped" && (
-          <p className="text-sm text-zinc-400">
+          <p className="text-sm text-gl-text-muted">
             Gateway is not deployed. Deploy it below to route traffic to your
             apps.
           </p>

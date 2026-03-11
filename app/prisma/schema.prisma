@@ -53,6 +53,7 @@ model Service {
   replicas                Int      @default(1) // number of service replicas (Swarm)
   deployMode             String   @default("manual") // "manual" | "auto" — auto watches branch and deploys on new commits
   lastDeployedCommitSha  String?  // for auto: last commit we deployed (to detect new commits)
+  domain                 String?  // optional custom domain from DNS settings (e.g. example.com); empty = use <name>.localhost
   createdAt              DateTime @default(now())
   deployments            Deployment[]
 }

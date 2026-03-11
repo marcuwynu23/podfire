@@ -240,6 +240,7 @@ const server = http.createServer(async (req, res) => {
   if (req.method === "GET" && pathname === "/service-diagnostics") {
     const stackName = u.searchParams.get("stackName");
     const portParam = u.searchParams.get("port");
+    const domain = u.searchParams.get("domain") ?? null;
     const port = portParam ? parseInt(portParam, 10) : 80;
     if (!stackName || !String(stackName).trim()) {
       res.statusCode = 400;
@@ -265,7 +266,7 @@ const server = http.createServer(async (req, res) => {
       }, SERVICE_DIAGNOSTICS_TIMEOUT_MS);
     });
     try {
-      conn.ws.send(JSON.stringify({ type: "diagnose-service", requestId, stackName: String(stackName).trim(), port: Number.isFinite(port) ? port : 80 }));
+      conn.ws.send(JSON.stringify({ type: "diagnose-service", requestId, stackName: String(stackName).trim(), port: Number.isFinite(port) ? port : 80, domain: domain || undefined }));
       const payload = await promise;
       res.setHeader("Content-Type", "application/json");
       res.end(JSON.stringify(payload));

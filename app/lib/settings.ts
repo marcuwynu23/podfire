@@ -4,7 +4,10 @@ import { decrypt, encrypt } from "@/lib/encryption";
 const ENV_FALLBACK: Record<string, string> = {
   github_client_id: "GITHUB_CLIENT_ID",
   github_client_secret: "GITHUB_CLIENT_SECRET",
+  gitlab_client_id: "GITLAB_CLIENT_ID",
+  gitlab_client_secret: "GITLAB_CLIENT_SECRET",
   docker_registry: "DOCKER_REGISTRY",
+  harbor_registry: "HARBOR_REGISTRY",
 };
 
 /** Get a setting value from DB (decrypted) or fallback to process.env. Returns null if not set. */
@@ -47,8 +50,17 @@ export async function getSettingsStatus(): Promise<Record<string, { set: boolean
     "docker_registry",
     "docker_registry_username",
     "docker_registry_password",
+    "harbor_registry",
+    "harbor_registry_username",
+    "harbor_registry_password",
+    "default_registry",
     "github_client_id",
     "github_client_secret",
+    "gitlab_client_id",
+    "gitlab_client_secret",
+    "default_scm",
+    "dns_domains",
+    "ssl_provider",
   ];
   let byKey: Record<string, boolean> = {};
   try {

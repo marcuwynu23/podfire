@@ -30,6 +30,8 @@ export function CreateAppForm({
   const repoDropdownRef = useRef<HTMLDivElement>(null);
   const envFileInputRef = useRef<HTMLInputElement>(null);
   const [branch, setBranch] = useState("");
+  const [domains, setDomains] = useState<string[]>([]);
+  const [selectedDomain, setSelectedDomain] = useState("");
   const [name, setName] = useState("");
   const [entryCommand, setEntryCommand] = useState("");
   const [buildCommand, setBuildCommand] = useState("");
@@ -91,6 +93,36 @@ export function CreateAppForm({
       })
       .catch(() => setBranches([]));
   }, [selectedRepo, repos]);
+
+  useEffect(() => {
+    fetch("/api/settings")
+      .then((r) => r.json())
+      .then((data) => {
+        if (!data.values?.dns_domains) {
+          setDomains([]);
+          return;
+        }
+        try {
+          const parsed = JSON.parse(data.values.dns_domains) as unknown;
+          if (!Array.isArray(parsed) || parsed.length === 0) {
+            setDomains([]);
+            return;
+          }
+          const list = parsed
+            .map((item: unknown) => {
+              if (item && typeof item === "object" && "domain" in item && typeof (item as { domain: string }).domain === "string")
+                return (item as { domain: string }).domain.trim();
+              if (typeof item === "string") return item.trim();
+              return "";
+            })
+            .filter(Boolean);
+          setDomains(list);
+        } catch {
+          setDomains([]);
+        }
+      })
+      .catch(() => setDomains([]));
+  }, []);
 
   function addEnvRow() {
     setEnvEntries((prev) => [...prev, {key: "", value: ""}]);
@@ -173,6 +205,7 @@ export function CreateAppForm({
           name: name.trim(),
           repoUrl: repo.clone_url,
           branch: branch || repo.default_branch,
+          domain: selectedDomain.trim() || undefined,
           entryCommand: entryCommand.trim() || undefined,
           buildCommand: buildCommand.trim() || undefined,
           env: buildEnvObject() ?? undefined,
@@ -192,7 +225,7 @@ export function CreateAppForm({
   return (
     <form
       onSubmit={onSubmit}
-      className={`w-full space-y-6 ${contained ? "" : "rounded-native border border-white/[0.06] bg-gl-card p-6 shadow-sm"}`}
+      className={`w-full space-y-6 ${contained ? "" : "rounded-native border border-gl-edge bg-gl-card p-6 shadow-sm"}`}
     >
       {error && (
         <p className="rounded-md bg-red-500/10 px-3 py-2 text-sm text-red-400">
@@ -200,18 +233,18 @@ export function CreateAppForm({
         </p>
       )}
 
-      <div className="space-y-1 border border-white/[0.06] rounded-native-sm overflow-hidden">
+      <div className="space-y-1 border border-gl-edge rounded-native-sm overflow-hidden">
         {/* Application Information */}
-        <div className="bg-black/20">
+        <div className="bg-gl-input-bg">
           <button
             type="button"
             onClick={() => toggleAccordion("application")}
-            className="flex w-full items-center justify-between gap-2 px-4 py-3 text-left text-sm font-medium text-white hover:bg-white/[0.04] transition"
+            className="flex w-full items-center justify-between gap-2 px-4 py-3 text-left text-sm font-medium text-gl-text hover:bg-gl-hover transition"
             aria-expanded={accordionOpen.application}
           >
             <span>Application Information</span>
             <svg
-              className={`h-4 w-4 shrink-0 text-zinc-500 transition-transform ${accordionOpen.application ? "rotate-180" : ""}`}
+              className={`h-4 w-4 shrink-0 text-gl-text-muted transition-transform ${accordionOpen.application ? "rotate-180" : ""}`}
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -225,9 +258,9 @@ export function CreateAppForm({
             </svg>
           </button>
           {accordionOpen.application && (
-            <div className="border-t border-white/[0.06] px-4 pb-4 pt-2 space-y-4">
+            <div className="border-t border-gl-edge px-4 pb-4 pt-2 space-y-4">
               <div>
-                <label className="mb-1 block text-sm font-medium text-zinc-300">
+                <label className="mb-1 block text-sm font-medium text-gl-text-muted">
                   App name
                 </label>
                 <input
@@ -235,12 +268,12 @@ export function CreateAppForm({
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="my-app"
-                  className="w-full rounded-lg border border-white/[0.06] bg-black/20 px-3 py-2 text-white placeholder-zinc-500 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+                  className="w-full rounded-lg border border-gl-edge bg-gl-input-bg px-3 py-2 text-gl-text placeholder-gl-text-muted focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
                   required
                 />
               </div>
               <div ref={repoDropdownRef} className="relative">
-                <label className="mb-1 block text-sm font-medium text-zinc-300">
+                <label className="mb-1 block text-sm font-medium text-gl-text-muted">
                   GitHub repository
                 </label>
                 <div className="relative">
@@ -260,10 +293,10 @@ export function CreateAppForm({
                         setRepoSearch(selectedRepo);
                     }}
                     placeholder="Search repositories..."
-                    className="w-full rounded-lg border border-white/[0.06] bg-black/20 py-2 pl-3 pr-10 text-white placeholder-zinc-500 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+                    className="w-full rounded-lg border border-gl-edge bg-gl-input-bg py-2 pl-3 pr-10 text-gl-text placeholder-gl-text-muted focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
                     autoComplete="off"
                   />
-                  <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500">
+                  <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gl-text-muted">
                     <svg
                       className="h-4 w-4"
                       fill="none"
@@ -280,9 +313,9 @@ export function CreateAppForm({
                   </span>
                 </div>
                 {repoDropdownOpen && (
-                  <ul className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-native-sm border border-white/[0.06] bg-gl-card py-1 shadow-sm">
+                  <ul className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-native-sm border border-gl-edge bg-gl-card py-1 shadow-sm">
                     {filteredRepos.length === 0 ? (
-                      <li className="px-3 py-2 text-sm text-zinc-500">
+                      <li className="px-3 py-2 text-sm text-gl-text-muted">
                         No repositories match
                       </li>
                     ) : (
@@ -295,7 +328,7 @@ export function CreateAppForm({
                               setRepoSearch("");
                               setRepoDropdownOpen(false);
                             }}
-                            className="w-full px-3 py-2 text-left text-sm text-white hover:bg-white/5 focus:bg-white/5 focus:outline-none"
+                            className="w-full px-3 py-2 text-left text-sm text-gl-text hover:bg-gl-hover focus:bg-white/5 focus:outline-none"
                           >
                             {r.full_name}
                           </button>
@@ -305,19 +338,19 @@ export function CreateAppForm({
                   </ul>
                 )}
                 {selectedRepo && !repoDropdownOpen && (
-                  <p className="mt-1 text-xs text-zinc-500">
+                  <p className="mt-1 text-xs text-gl-text-muted">
                     Selected: {selectedRepo}
                   </p>
                 )}
               </div>
               <div>
-                <label className="mb-1 block text-sm font-medium text-zinc-300">
+                <label className="mb-1 block text-sm font-medium text-gl-text-muted">
                   Branch
                 </label>
                 <select
                   value={branch}
                   onChange={(e) => setBranch(e.target.value)}
-                  className="w-full rounded-lg border border-white/[0.06] bg-black/20 px-3 py-2 text-white focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+                  className="w-full rounded-lg border border-gl-edge bg-gl-input-bg px-3 py-2 text-gl-text focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
                 >
                   {branches.map((b) => (
                     <option key={b.name} value={b.name}>
@@ -326,21 +359,41 @@ export function CreateAppForm({
                   ))}
                 </select>
               </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gl-text-muted">
+                  Domain
+                </label>
+                <select
+                  value={selectedDomain}
+                  onChange={(e) => setSelectedDomain(e.target.value)}
+                  className="w-full rounded-lg border border-gl-edge bg-gl-input-bg px-3 py-2 text-gl-text focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+                >
+                  <option value="">Default (&lt;name&gt;.localhost)</option>
+                  {domains.map((d) => (
+                    <option key={d} value={d}>
+                      {d}
+                    </option>
+                  ))}
+                </select>
+                <p className="mt-1 text-xs text-gl-text-muted">
+                  Domains from Admin settings → DNS. Leave default for local routing only.
+                </p>
+              </div>
             </div>
           )}
         </div>
 
         {/* Build Configuration */}
-        <div className="border-t border-white/[0.06] bg-black/20">
+        <div className="border-t border-gl-edge bg-gl-input-bg">
           <button
             type="button"
             onClick={() => toggleAccordion("build")}
-            className="flex w-full items-center justify-between gap-2 px-4 py-3 text-left text-sm font-medium text-white hover:bg-white/[0.04] transition"
+            className="flex w-full items-center justify-between gap-2 px-4 py-3 text-left text-sm font-medium text-gl-text hover:bg-gl-hover transition"
             aria-expanded={accordionOpen.build}
           >
             <span>Build Configuration</span>
             <svg
-              className={`h-4 w-4 shrink-0 text-zinc-500 transition-transform ${accordionOpen.build ? "rotate-180" : ""}`}
+              className={`h-4 w-4 shrink-0 text-gl-text-muted transition-transform ${accordionOpen.build ? "rotate-180" : ""}`}
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -354,9 +407,9 @@ export function CreateAppForm({
             </svg>
           </button>
           {accordionOpen.build && (
-            <div className="border-t border-white/[0.06] px-4 pb-4 pt-2 space-y-4">
+            <div className="border-t border-gl-edge px-4 pb-4 pt-2 space-y-4">
               <div>
-                <label className="mb-1 block text-sm font-medium text-zinc-300">
+                <label className="mb-1 block text-sm font-medium text-gl-text-muted">
                   Entry command
                 </label>
                 <input
@@ -364,15 +417,15 @@ export function CreateAppForm({
                   value={entryCommand}
                   onChange={(e) => setEntryCommand(e.target.value)}
                   placeholder="e.g. npm start or node server.js"
-                  className="w-full rounded-lg border border-white/[0.06] bg-black/20 px-3 py-2 text-white placeholder-zinc-500 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+                  className="w-full rounded-lg border border-gl-edge bg-gl-input-bg px-3 py-2 text-gl-text placeholder-gl-text-muted focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
                 />
-                <p className="mt-1 text-xs text-zinc-500">
+                <p className="mt-1 text-xs text-gl-text-muted">
                   Command run when the container starts (overrides template
                   default).
                 </p>
               </div>
               <div>
-                <label className="mb-1 block text-sm font-medium text-zinc-300">
+                <label className="mb-1 block text-sm font-medium text-gl-text-muted">
                   Build command
                 </label>
                 <input
@@ -380,9 +433,9 @@ export function CreateAppForm({
                   value={buildCommand}
                   onChange={(e) => setBuildCommand(e.target.value)}
                   placeholder="e.g. npm run build"
-                  className="w-full rounded-lg border border-white/[0.06] bg-black/20 px-3 py-2 text-white placeholder-zinc-500 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+                  className="w-full rounded-lg border border-gl-edge bg-gl-input-bg px-3 py-2 text-gl-text placeholder-gl-text-muted focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
                 />
-                <p className="mt-1 text-xs text-zinc-500">
+                <p className="mt-1 text-xs text-gl-text-muted">
                   Run during Docker build (overrides template default).
                 </p>
               </div>
@@ -391,16 +444,16 @@ export function CreateAppForm({
         </div>
 
         {/* Environment Variables */}
-        <div className="border-t border-white/[0.06] bg-black/20">
+        <div className="border-t border-gl-edge bg-gl-input-bg">
           <button
             type="button"
             onClick={() => toggleAccordion("env")}
-            className="flex w-full items-center justify-between gap-2 px-4 py-3 text-left text-sm font-medium text-white hover:bg-white/[0.04] transition"
+            className="flex w-full items-center justify-between gap-2 px-4 py-3 text-left text-sm font-medium text-gl-text hover:bg-gl-hover transition"
             aria-expanded={accordionOpen.env}
           >
             <span>Environment Variables</span>
             <svg
-              className={`h-4 w-4 shrink-0 text-zinc-500 transition-transform ${accordionOpen.env ? "rotate-180" : ""}`}
+              className={`h-4 w-4 shrink-0 text-gl-text-muted transition-transform ${accordionOpen.env ? "rotate-180" : ""}`}
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -414,7 +467,7 @@ export function CreateAppForm({
             </svg>
           </button>
           {accordionOpen.env && (
-            <div className="border-t border-white/[0.06] px-4 pb-4 pt-2 space-y-2">
+            <div className="border-t border-gl-edge px-4 pb-4 pt-2 space-y-2">
               <div className="flex flex-wrap items-center justify-end gap-2">
                 <input
                   ref={envFileInputRef}
@@ -431,7 +484,7 @@ export function CreateAppForm({
                 >
                   + Import Environment Variables
                 </button>
-                <span className="text-zinc-600" aria-hidden>
+                <span className="text-gl-text-muted" aria-hidden>
                   ·
                 </span>
                 <button
@@ -450,7 +503,7 @@ export function CreateAppForm({
                       value={e.key}
                       onChange={(ev) => updateEnvRow(i, "key", ev.target.value)}
                       placeholder="KEY"
-                      className="w-32 rounded-lg border border-white/[0.06] bg-black/20 px-3 py-2 text-sm text-white placeholder-zinc-500 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+                      className="w-32 rounded-lg border border-gl-edge bg-gl-input-bg px-3 py-2 text-sm text-gl-text placeholder-gl-text-muted focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
                     />
                     <input
                       type="text"
@@ -459,12 +512,12 @@ export function CreateAppForm({
                         updateEnvRow(i, "value", ev.target.value)
                       }
                       placeholder="value"
-                      className="flex-1 rounded-lg border border-white/[0.06] bg-black/20 px-3 py-2 text-sm text-white placeholder-zinc-500 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+                      className="flex-1 rounded-lg border border-gl-edge bg-gl-input-bg px-3 py-2 text-sm text-gl-text placeholder-gl-text-muted focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
                     />
                     <button
                       type="button"
                       onClick={() => removeEnvRow(i)}
-                      className="rounded p-2 text-zinc-500 hover:bg-white/5 hover:text-white"
+                      className="rounded p-2 text-gl-text-muted hover:bg-gl-hover hover:text-gl-text"
                       aria-label="Remove row"
                     >
                       ×
@@ -472,7 +525,7 @@ export function CreateAppForm({
                   </div>
                 ))}
               </div>
-              <p className="text-xs text-zinc-500">
+              <p className="text-xs text-gl-text-muted">
                 Set in the container at runtime. Leave key empty to skip. Upload
                 a .env file to load flat KEY=value lines.
               </p>
@@ -491,7 +544,7 @@ export function CreateAppForm({
         </button>
         <Link
           href={cancelHref}
-          className="rounded-native-sm border border-white/[0.06] px-4 py-2 text-zinc-300 hover:bg-white/[0.06]"
+          className="rounded-native-sm border border-gl-edge px-4 py-2 text-gl-text-muted hover:bg-gl-hover"
         >
           Cancel
         </Link>

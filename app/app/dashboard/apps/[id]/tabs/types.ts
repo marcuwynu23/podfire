@@ -3,6 +3,7 @@ import type { Deployment, Service } from "@prisma/client";
 export type ServiceWithDeployments = Service & {
   deployments: Deployment[];
   replicas?: number;
+  domain?: string | null;
 };
 
 export type DiagnosticsResult = {
