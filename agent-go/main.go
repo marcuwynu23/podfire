@@ -276,8 +276,8 @@ func runDeployFromJob(conn *websocket.Conn, p *DeployPayload) {
 	sendLog("")
 	sendLog("=== PHASE 1: CLONE REPOSITORY ===")
 	os.MkdirAll(tmpDir, 0755)
-	cloneCmd := `git clone --depth 1 --branch "` + p.Branch + `" "` + p.CloneURL + `" repo`
-	res := run.Run(cloneCmd, tmpDir)
+	sendLog("Running: git clone --depth 1 --branch \"" + p.Branch + "\" \"" + p.CloneURL + "\" repo")
+	res := run.RunGitClone(p.Branch, p.CloneURL, tmpDir)
 	sendLog(run.FormatOutput(res))
 	if !res.Success {
 		sendPhase("clone", time.Since(phaseStart).Seconds())

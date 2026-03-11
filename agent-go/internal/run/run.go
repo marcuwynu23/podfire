@@ -24,6 +24,30 @@ func shellAndArgs(command string) (name string, args []string) {
 	return "sh", []string{"-c", command}
 }
 
+// RunGitClone runs `git clone --depth 1 --branch <branch> <cloneURL> repo` in cwd.
+// Uses exec directly (no shell) so branch and URL are passed as-is on all platforms (matches Node agent behavior, avoids Windows quoting issues).
+func RunGitClone(branch, cloneURL, cwd string) Result {
+	cmd := exec.Command("git", "clone", "--depth", "1", "--branch", branch, cloneURL, "repo")
+	if cwd != "" {
+		cmd.Dir = cwd
+	}
+	var out, errOut bytes.Buffer
+	cmd.Stdout = &out
+	cmd.Stderr = &errOut
+	err := cmd.Run()
+	stdout := strings.TrimSpace(out.String())
+	stderr := strings.TrimSpace(errOut.String())
+	r := Result{
+		Success: cmd.ProcessState != nil && cmd.ProcessState.Success(),
+		Stdout:  stdout,
+		Stderr:  stderr,
+	}
+	if err != nil {
+		r.Error = err.Error()
+	}
+	return r
+}
+
 // Run runs a command in the shell and returns combined result.
 func Run(command, cwd string) Result {
 	name, args := shellAndArgs(command)
