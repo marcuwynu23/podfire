@@ -99,13 +99,19 @@ export async function createAndDispatchDeployment(
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
-    const data = (await res.json()) as { ok?: boolean };
+    const data = (await res.json()) as { ok?: boolean; queued?: boolean };
     if (!res.ok || !data.ok) {
       await prisma.deployment.update({
         where: { id: deployment.id },
         data: { status: "failed", logs: "Failed to send job to agent.\n" },
       });
       return { ok: false, error: "Dispatch failed", status: 503 };
+    }
+    if (data.queued) {
+      await prisma.deployment.update({
+        where: { id: deployment.id },
+        data: { status: "queued", logs: "Queued; will run when an agent is available.\n" },
+      });
     }
   } catch {
     await prisma.deployment.update({
