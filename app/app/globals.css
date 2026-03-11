@@ -95,9 +95,10 @@ body {
   background: rgba(0, 0, 0, 0.3);
 }
 
-/* Deployment tab: extra-thin scrollbar, theme-aware */
+/* Deployment tab: extra-thin scrollbar, theme-aware (list + logs) */
 .scrollbar-deployment {
   scrollbar-width: thin;
+  scrollbar-gutter: stable;
   scrollbar-color: rgba(255, 255, 255, 0.22) transparent;
 }
 .scrollbar-deployment::-webkit-scrollbar {
