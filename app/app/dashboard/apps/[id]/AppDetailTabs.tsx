@@ -37,6 +37,13 @@ export function AppDetailTabs({
   const status = polledStatus ?? serverStatus;
   const baseHost = (service.stackName ?? service.name).toLowerCase().replace(/[^a-z0-9-]/g, "-");
   const domain = (service as { domain?: string | null }).domain;
+  const diagnosticsEnabled = (service as { diagnosticsEnabled?: boolean }).diagnosticsEnabled ?? false;
+  const visibleTabs = tabs.filter((tab) => tab.id !== "diagnostics" || diagnosticsEnabled);
+  useEffect(() => {
+    if (activeTab === "diagnostics" && !diagnosticsEnabled) {
+      setActiveTab("info");
+    }
+  }, [activeTab, diagnosticsEnabled]);
   const appUrl = domain?.trim()
     ? `http://${baseHost}.${domain.trim()}`
     : `http://${baseHost}.localhost`;
@@ -198,7 +205,7 @@ export function AppDetailTabs({
           className="flex gap-0 border-b border-gl-edge px-6"
           aria-label="App sections"
         >
-          {tabs.map((tab) => (
+          {visibleTabs.map((tab) => (
             <button
               key={tab.id}
               type="button"
@@ -271,6 +278,7 @@ export function AppDetailTabs({
               (service as { deployMode?: string }).deployMode ?? "manual"
             }
             domain={(service as { domain?: string | null }).domain ?? null}
+            diagnosticsEnabled={diagnosticsEnabled}
             entryCommand={(service as { entryCommand?: string | null }).entryCommand ?? null}
             buildCommand={(service as { buildCommand?: string | null }).buildCommand ?? null}
             onSaved={() => router.refresh()}

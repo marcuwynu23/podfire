@@ -85,7 +85,6 @@ function DomainBlock({
   const [domains, setDomains] = useState<string[]>([]);
   const [selected, setSelected] = useState(currentDomain ?? "");
   const [saving, setSaving] = useState(false);
-  const [updatingRouting, setUpdatingRouting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -122,7 +121,7 @@ function DomainBlock({
     setSelected(currentDomain ?? "");
   }, [currentDomain]);
 
-  async function save() {
+  async function saveAndUpdateRouting() {
     setError(null);
     setSaving(true);
     try {
@@ -136,33 +135,23 @@ function DomainBlock({
         setError((data as { error?: string }).error ?? "Failed to save");
         return;
       }
-      onSaved();
-    } catch {
-      setError("Request failed");
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  async function updateRouting() {
-    setError(null);
-    setUpdatingRouting(true);
-    try {
-      const res = await fetch(`/api/services/${serviceId}/update-routing`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "same-origin",
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        setError((data as { error?: string }).error ?? "Update routing failed");
-        return;
+      if (selected.trim()) {
+        const routingRes = await fetch(`/api/services/${serviceId}/update-routing`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "same-origin",
+        });
+        const routingData = await routingRes.json().catch(() => ({}));
+        if (!routingRes.ok) {
+          setError((routingData as { error?: string }).error ?? "Update routing failed");
+          return;
+        }
       }
       onSaved();
     } catch {
       setError("Request failed");
     } finally {
-      setUpdatingRouting(false);
+      setSaving(false);
     }
   }
 
@@ -187,6 +176,76 @@ function DomainBlock({
         </select>
         <button
           type="button"
+          onClick={saveAndUpdateRouting}
+          disabled={saving}
+          className="rounded-xl bg-primary px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-primary-hover disabled:opacity-50"
+        >
+          {saving ? "Saving…" : selected.trim() ? "Save & update routing" : "Save"}
+        </button>
+      </div>
+      {error && <p className="mt-2 text-sm text-amber-400">{error}</p>}
+    </section>
+  );
+}
+
+function DiagnosticsBlock({
+  serviceId,
+  diagnosticsEnabled,
+  onSaved,
+}: {
+  serviceId: string;
+  diagnosticsEnabled: boolean;
+  onSaved: () => void;
+}) {
+  const [enabled, setEnabled] = useState(diagnosticsEnabled);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setEnabled(diagnosticsEnabled);
+  }, [diagnosticsEnabled]);
+
+  async function save() {
+    setError(null);
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/services/${serviceId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ diagnosticsEnabled: enabled }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setError((data as { error?: string }).error ?? "Failed to save");
+        return;
+      }
+      onSaved();
+    } catch {
+      setError("Request failed");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <section className="mt-6 rounded-native border border-gl-edge bg-gl-input-bg p-4">
+      <h3 className="text-sm font-medium text-gl-text">Diagnostics tab</h3>
+      <p className="mt-0.5 text-xs text-gl-text-muted">
+        Show or hide the Diagnostics tab for this app. When enabled, you can run
+        service diagnostics (Traefik routing, container reachability). Disabled by default.
+      </p>
+      <div className="mt-3 flex flex-wrap items-center gap-3">
+        <label className="flex cursor-pointer items-center gap-2">
+          <input
+            type="checkbox"
+            checked={enabled}
+            onChange={(e) => setEnabled(e.target.checked)}
+            className="h-4 w-4 rounded border-gl-edge text-primary focus:ring-primary/30"
+          />
+          <span className="text-sm text-gl-text">Enable Diagnostics tab</span>
+        </label>
+        <button
+          type="button"
           onClick={save}
           disabled={saving}
           className="rounded-xl bg-primary px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-primary-hover disabled:opacity-50"
@@ -194,21 +253,6 @@ function DomainBlock({
           {saving ? "Saving…" : "Save"}
         </button>
       </div>
-      {selected.trim() && (
-        <p className="mt-3 text-xs text-gl-text-muted">
-          After saving a custom domain, click <strong>Update routing</strong> so Traefik uses it (fixes 404 without a full redeploy).
-        </p>
-      )}
-      {selected.trim() && (
-        <button
-          type="button"
-          onClick={updateRouting}
-          disabled={updatingRouting}
-          className="mt-2 rounded-lg border border-primary/40 bg-primary/10 px-3 py-1.5 text-sm font-medium text-primary transition hover:bg-primary/20 disabled:opacity-50"
-        >
-          {updatingRouting ? "Updating…" : "Update routing"}
-        </button>
-      )}
       {error && <p className="mt-2 text-sm text-amber-400">{error}</p>}
     </section>
   );
@@ -306,6 +350,7 @@ export function SettingsPanel({
   appName,
   deployMode,
   domain,
+  diagnosticsEnabled,
   entryCommand,
   buildCommand,
   onSaved,
@@ -314,6 +359,7 @@ export function SettingsPanel({
   appName: string;
   deployMode: string;
   domain?: string | null;
+  diagnosticsEnabled?: boolean;
   entryCommand?: string | null;
   buildCommand?: string | null;
   onSaved: () => void;
@@ -322,7 +368,7 @@ export function SettingsPanel({
     <div className="p-6">
       <h2 className="text-base font-semibold text-gl-text">Settings</h2>
       <p className="mt-0.5 text-sm text-gl-text-muted">
-        Domain, deploy mode, build options, and danger zone.
+        Domain, deploy mode, diagnostics, build options, and danger zone.
       </p>
 
       <DomainBlock
@@ -334,6 +380,12 @@ export function SettingsPanel({
       <DeployModeBlock
         serviceId={serviceId}
         deployMode={deployMode}
+        onSaved={onSaved}
+      />
+
+      <DiagnosticsBlock
+        serviceId={serviceId}
+        diagnosticsEnabled={diagnosticsEnabled ?? false}
         onSaved={onSaved}
       />
 
