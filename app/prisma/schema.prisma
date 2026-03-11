@@ -57,6 +57,7 @@ model Service {
   deployMode             String   @default("manual") // "manual" | "auto" — auto watches branch and deploys on new commits
   lastDeployedCommitSha  String?  // for auto: last commit we deployed (to detect new commits)
   domain                 String?  // optional custom domain from DNS settings (e.g. example.com); empty = use <name>.localhost
+  diagnosticsEnabled     Boolean  @default(false) // show Diagnostics tab in app detail (disabled by default)
   createdAt              DateTime @default(now())
   deployments            Deployment[]
 }
