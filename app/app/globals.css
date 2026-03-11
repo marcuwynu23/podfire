@@ -95,6 +95,35 @@ body {
   background: rgba(0, 0, 0, 0.3);
 }
 
+/* Deployment tab: extra-thin scrollbar, theme-aware */
+.scrollbar-deployment {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.22) transparent;
+}
+.scrollbar-deployment::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+.scrollbar-deployment::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scrollbar-deployment::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.22);
+  border-radius: 3px;
+}
+.scrollbar-deployment::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.35);
+}
+html[data-theme="light"] .scrollbar-deployment {
+  scrollbar-color: rgba(0, 0, 0, 0.18) transparent;
+}
+html[data-theme="light"] .scrollbar-deployment::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.18);
+}
+html[data-theme="light"] .scrollbar-deployment::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.28);
+}
+
 /* Log viewer scrollbar: thin, theme-aware, stable gutter */
 .logs-viewer-scroll {
   scrollbar-width: thin;
