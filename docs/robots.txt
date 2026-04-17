@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://podfire.marcuwynu.space/sitemap.xml
+Host: https://podfire.marcuwynu.space
