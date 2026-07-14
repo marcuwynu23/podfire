@@ -97,6 +97,12 @@ export function GatewayActions() {
     setRemoveState("idle");
     setMessage(null);
     try {
+      const statusRes = await fetch("/api/traefik/status", {cache: "no-store"});
+      const statusData = (await statusRes.json()) as {running?: boolean};
+      if (statusData.running) {
+        await fetch("/api/traefik/remove", {method: "POST"});
+        await new Promise((r) => setTimeout(r, 1500));
+      }
       await deployWithYaml(yaml);
       setUpdateState("success");
       setMessage("Gateway deployed successfully.");
