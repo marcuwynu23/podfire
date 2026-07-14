@@ -295,7 +295,7 @@ func runDeployFromJob(conn *websocket.Conn, p *DeployPayload) {
 	sendLog("Detected framework: " + string(fw))
 	sendLog("")
 
-	// Detect port: Dockerfile EXPOSE first, then source scan, then fallback
+	// Detect port from Dockerfile EXPOSE
 	if dockerfilePort := docker.DetectPortFromDockerfile(repoPath); dockerfilePort > 0 {
 		sendLog("Detected port from Dockerfile EXPOSE: " + strconv.Itoa(dockerfilePort))
 		p.Port = dockerfilePort
@@ -303,15 +303,8 @@ func runDeployFromJob(conn *websocket.Conn, p *DeployPayload) {
 			p.Env = make(map[string]string)
 		}
 		p.Env["PORT"] = strconv.Itoa(p.Port)
-	} else if sourcePort := docker.DetectPortFromSource(repoPath); sourcePort > 0 {
-		sendLog("Detected container port from source: " + strconv.Itoa(sourcePort))
-		p.Port = sourcePort
-		if p.Env == nil {
-			p.Env = make(map[string]string)
-		}
-		p.Env["PORT"] = strconv.Itoa(p.Port)
 	} else {
-		sendLog("No port detected from Dockerfile or source; using port " + strconv.Itoa(p.Port))
+		sendLog("No EXPOSE in Dockerfile; using port " + strconv.Itoa(p.Port))
 	}
 	sendLog("")
 
