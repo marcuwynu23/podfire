@@ -79,3 +79,4 @@ temp/
 
 
 *.exe
+.stack-tmp
