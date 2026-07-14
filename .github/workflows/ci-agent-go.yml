@@ -1,0 +1,30 @@
+name: CI - Agent (Go)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "agent-go/**"
+      - ".github/workflows/ci-agent-go.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "agent-go/**"
+      - ".github/workflows/ci-agent-go.yml"
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: agent-go
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.21"
+          cache-dependency-path: agent-go/go.sum
+      - run: go mod download
+      - run: go build ./...
+      - run: go vet ./...
+      - run: go test -count=1 ./...
