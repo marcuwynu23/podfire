@@ -144,7 +144,7 @@ export function DNSSettings() {
       <section className="min-w-0 overflow-hidden rounded-native border border-gl-edge bg-gl-card p-4 shadow-sm sm:p-6">
         <h2 className="text-lg font-semibold text-gl-text">DNS & domains</h2>
         <p className="mt-1 text-sm text-gl-text-muted">
-          Domains to manage. Set SSL/TLS per domain: Let's Encrypt or Cloudflare.
+          Domains to manage. Set SSL/TLS per domain: Let&apos;s Encrypt or Cloudflare.
         </p>
         <div className="mt-4 min-w-0">
           {/* Mobile: list of cards */}
@@ -179,7 +179,7 @@ export function DNSSettings() {
                         onChange={() => setRowSsl(i, "letsencrypt")}
                         className="border-gl-edge text-primary focus:ring-primary"
                       />
-                      <span className="text-sm text-gl-text">Let's Encrypt</span>
+                      <span className="text-sm text-gl-text">Let&apos;s Encrypt</span>
                     </label>
                     <label className="flex cursor-pointer items-center gap-1.5">
                       <input
@@ -240,7 +240,7 @@ export function DNSSettings() {
                             onChange={() => setRowSsl(i, "letsencrypt")}
                             className="border-gl-edge text-primary focus:ring-primary"
                           />
-                          <span className="text-gl-text">Let's Encrypt</span>
+                          <span className="text-gl-text">Let&apos;s Encrypt</span>
                         </label>
                         <label className="flex cursor-pointer items-center gap-1.5">
                           <input
