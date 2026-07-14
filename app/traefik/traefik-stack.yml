@@ -1,9 +1,4 @@
-# Traefik Gateway for Docker Swarm (see docker-swarm-stack-traefik-gateway.md).
-# Only Traefik publishes ports; apps use the overlay network only.
-#
-# Prerequisite: Expose Docker API on TCP so Traefik can reach it from the container.
-# - Docker Desktop: Settings → General → "Expose daemon on tcp://localhost:2375 without TLS"
-# - Linux: e.g. -H tcp://0.0.0.0:2375 in dockerd (or use socket mount instead)
+# Traefik Gateway for Docker Swarm
 
 networks:
   web:
@@ -13,7 +8,7 @@ services:
   traefik:
     image: traefik:v2.11
     command:
-      - --providers.docker.endpoint=tcp://host.docker.internal:2375
+      - --providers.docker.endpoint=unix:///var/run/docker.sock
       - --providers.docker.swarmMode=true
       - --providers.docker.exposedbydefault=false
 
@@ -28,6 +23,8 @@ services:
       - target: 8080
         published: 8080
         mode: host
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
     networks:
       - web
     deploy:

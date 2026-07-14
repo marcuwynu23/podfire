@@ -43,8 +43,8 @@ function buildTraefikYaml(baseYaml: string, acmeEmail: string): string {
 
   if (!out.includes("letsencrypt")) {
     out = out.replace(
-      "    networks:\n      - web\n    deploy:",
-      "    networks:\n      - web\n    volumes:\n      - letsencrypt:/letsencrypt\n    deploy:"
+      "    volumes:\n      - /var/run/docker.sock:/var/run/docker.sock:ro",
+      "    volumes:\n      - /var/run/docker.sock:/var/run/docker.sock:ro\n      - letsencrypt:/letsencrypt"
     );
     out = out.replace(
       "networks:\n  web:\n    external: true",
