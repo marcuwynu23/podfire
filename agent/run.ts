@@ -50,7 +50,7 @@ function runDeployFromJob(
   send: (msg: object) => void,
 ): Promise<void> {
   const {deploymentId, cloneUrl, branch, serviceName, stackName} = payload;
-  const port = payload.port ?? 80;
+  let port = payload.port ?? 80;
   const sendLog = (line: string) => send({type: "log", deploymentId, line});
   const sendStatus = (status: string) =>
     send({type: "status", deploymentId, status});
