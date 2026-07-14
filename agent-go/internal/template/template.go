@@ -95,7 +95,7 @@ func CopyTemplateToRepo(repoPath string, fw framework.Framework, opts *Options) 
 	if !ok {
 		return nil // custom or unknown, caller uses repo Dockerfile
 	}
-	data, err := templatesFS.ReadFile(filepath.Join(templateDir, name))
+	data, err := templatesFS.ReadFile(templateDir + "/" + name)
 	if err != nil {
 		return err
 	}

@@ -6,7 +6,9 @@
   "scripts": {
     "start": "tsx run.ts",
     "build": "tsc",
-    "dev": "tsx run.ts"
+    "dev": "tsx run.ts",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "dotenv": "^16.4.5",
@@ -16,6 +18,7 @@
     "@types/node": "^22.9.0",
     "@types/ws": "^8.5.10",
     "tsx": "^4.19.2",
-    "typescript": "^5.6.3"
+    "typescript": "^5.6.3",
+    "vitest": "^4.1.10"
   }
 }
