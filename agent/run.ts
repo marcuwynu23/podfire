@@ -14,6 +14,7 @@ import {
   deployTraefikStack,
   removeTraefikStack,
   isTraefikRunning,
+  isDockerAvailable,
 } from "./lib/stack.js";
 import {runCommand, runCommandStream, formatOutput} from "./lib/run-command.js";
 import {getAvailablePort} from "./lib/available-port.js";
@@ -382,12 +383,19 @@ function connect(): WebSocket {
         }
       } else if (msg.type === "deploy-traefik") {
         const yaml = typeof msg.yaml === "string" ? msg.yaml : "";
+        const requestId = typeof msg.requestId === "string" ? msg.requestId : null;
         console.log("[podfire-agent] Deploy Traefik");
         try {
           deployTraefikStack(yaml);
           console.log("[podfire-agent] Traefik deployed");
+          if (requestId && ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({type: "traefik-deploy-result", requestId, success: true}));
+          }
         } catch (err) {
           console.error("[podfire-agent] Traefik deploy error:", err);
+          if (requestId && ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({type: "traefik-deploy-result", requestId, success: false, error: err instanceof Error ? err.message : String(err)}));
+          }
         }
       } else if (msg.type === "remove-traefik") {
         console.log("[podfire-agent] Remove Traefik");
@@ -399,9 +407,10 @@ function connect(): WebSocket {
         }
       } else if (msg.type === "get-traefik-status" && msg.requestId != null) {
         const requestId = msg.requestId as string;
-        const running = isTraefikRunning();
+        const dockerAvailable = isDockerAvailable();
+        const running = dockerAvailable && isTraefikRunning();
         if (ws.readyState === WebSocket.OPEN) {
-          ws.send(JSON.stringify({type: "traefik-status", requestId, running}));
+          ws.send(JSON.stringify({type: "traefik-status", requestId, running, dockerAvailable}));
         }
       } else if (msg.type === "get-available-port" && msg.requestId != null) {
         const requestId = msg.requestId as string;

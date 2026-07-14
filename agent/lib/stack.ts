@@ -119,6 +119,11 @@ export function removeTraefikStack(): void {
   }
 }
 
+export function isDockerAvailable(): boolean {
+  const result = runCommand("docker info");
+  return result.success;
+}
+
 export function isTraefikRunning(): boolean {
   const result = runCommand("docker stack ps traefik --no-trunc -q");
   if (!result.success) return false;
