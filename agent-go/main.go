@@ -1,12 +1,15 @@
 package main
 
 import (
+	"bufio"
 	"crypto/rand"
 	"encoding/hex"
 	"encoding/json"
 	"log"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"strings"
 	"sync"
@@ -21,6 +24,94 @@ import (
 	"github.com/marcuwynu23/podfire/agent-go/internal/stack"
 	"github.com/marcuwynu23/podfire/agent-go/internal/template"
 )
+
+type FollowSession struct {
+	mu          sync.Mutex
+	serviceName string
+	cmd         *exec.Cmd
+	lines       []string
+	lineCount   int
+}
+
+var (
+	followMu       sync.Mutex
+	followSessions = make(map[string]*FollowSession)
+)
+
+func shellCmd(command string) (name string, args []string) {
+	if runtime.GOOS == "windows" {
+		return "cmd", []string{"/c", command}
+	}
+	return "sh", []string{"-c", command}
+}
+
+func startFollowSession(serviceName string) *FollowSession {
+	followMu.Lock()
+	defer followMu.Unlock()
+
+	if existing, ok := followSessions[serviceName]; ok {
+		return existing
+	}
+
+	shell, args := shellCmd("docker service logs " + serviceName + " --tail 0 -f 2>&1")
+	cmd := exec.Command(shell, args...)
+
+	stdout, err := cmd.StdoutPipe()
+	if err != nil {
+		return nil
+	}
+	stderr, err := cmd.StderrPipe()
+	if err != nil {
+		return nil
+	}
+
+	if err := cmd.Start(); err != nil {
+		return nil
+	}
+
+	session := &FollowSession{
+		serviceName: serviceName,
+		cmd:         cmd,
+		lines:       make([]string, 0, 1000),
+	}
+	followSessions[serviceName] = session
+
+	emit := func(sc *bufio.Scanner) {
+		for sc.Scan() {
+			line := sc.Text()
+			session.mu.Lock()
+			if len(session.lines) >= 1000 {
+				session.lines = session.lines[1:]
+			}
+			session.lines = append(session.lines, line)
+			session.lineCount++
+			session.mu.Unlock()
+		}
+	}
+
+	go emit(bufio.NewScanner(stdout))
+	go emit(bufio.NewScanner(stderr))
+
+	go func() {
+		cmd.Wait()
+		followMu.Lock()
+		delete(followSessions, serviceName)
+		followMu.Unlock()
+	}()
+
+	return session
+}
+
+func stopFollowSession(serviceName string) {
+	followMu.Lock()
+	session, ok := followSessions[serviceName]
+	delete(followSessions, serviceName)
+	followMu.Unlock()
+	if ok && session.cmd.Process != nil {
+		session.cmd.Process.Kill()
+	}
+}
+
 
 const (
 	agentKeyFile = ".agent-key"
@@ -488,37 +579,96 @@ func handleServiceLogs(conn *websocket.Conn, msg map[string]interface{}) {
 	stackName, _ := msg["stackName"].(string)
 	stackName = strings.TrimSpace(stackName)
 	safe := docker.SanitizeForDocker(stackName)
-	filter := safe + "_app"
+	serviceName := safe + "_app"
 
-	// Get currently running container IDs for this service
-	lsRes := run.Run("docker container ls --filter label=com.docker.swarm.service.name="+filter+" --format '{{.ID}}' 2>&1", "")
-	containerIDs := strings.Fields(lsRes.Stdout)
+	follow, _ := msg["follow"].(bool)
+	if !follow {
+		if s, ok := msg["follow"].(string); ok && s == "true" {
+			follow = true
+		}
+	}
 
-	if len(containerIDs) == 0 {
-		send(conn, map[string]interface{}{"type": "service-logs", "requestId": requestID, "logs": "(no running containers)"})
+	stopFollow, _ := msg["stopFollow"].(bool)
+	if !stopFollow {
+		if s, ok := msg["stopFollow"].(string); ok && s == "true" {
+			stopFollow = true
+		}
+	}
+
+	cursor := -1
+	switch c := msg["cursor"].(type) {
+	case float64:
+		cursor = int(c)
+	case string:
+		cursor, _ = strconv.Atoi(c)
+	}
+
+	if stopFollow {
+		stopFollowSession(serviceName)
+		send(conn, map[string]interface{}{"type": "service-logs", "requestId": requestID, "logs": nil, "append": false})
 		return
 	}
 
-	var allLogs []string
-	for _, cid := range containerIDs {
-		shortID := cid
-		if len(shortID) > 12 {
-			shortID = shortID[:12]
-		}
-		res := run.Run("docker logs "+shortID+" --tail 1000 2>&1", "")
-		part := strings.TrimSpace(res.Stdout + "\n" + res.Stderr)
-		if part != "" {
-			allLogs = append(allLogs, "["+shortID+"] "+part)
-		} else if !res.Success {
-			allLogs = append(allLogs, "["+shortID+"] (container no longer available)")
-		}
-	}
+	if follow && cursor >= 0 {
+		session := startFollowSession(serviceName)
+		if session != nil {
+			session.mu.Lock()
+			firstStored := 0
+			if session.lineCount > len(session.lines) {
+				firstStored = session.lineCount - len(session.lines)
+			}
+			var newLines []string
+			if cursor < session.lineCount {
+				start := cursor - firstStored
+				if start < 0 {
+					start = 0
+				}
+				if start < len(session.lines) {
+					newLines = session.lines[start:]
+				}
+			}
+			newCursor := session.lineCount
+			session.mu.Unlock()
 
-	logs := strings.Join(allLogs, "\n---\n")
-	if logs == "" {
-		logs = "(no logs)"
+			linesStr := strings.Join(newLines, "\n")
+			send(conn, map[string]interface{}{"type": "service-logs", "requestId": requestID, "lines": linesStr, "cursor": newCursor, "append": true})
+		} else {
+			res := run.Run("docker service logs "+serviceName+" --tail 1000 2>&1", "")
+			logs := "(no logs)"
+			if res.Success {
+				logs = strings.TrimSpace(res.Stdout)
+				if logs == "" {
+					logs = "(no logs)"
+				}
+			}
+			send(conn, map[string]interface{}{"type": "service-logs", "requestId": requestID, "logs": logs, "cursor": 0, "append": true})
+		}
+	} else if follow {
+		startFollowSession(serviceName)
+		res := run.Run("docker service logs "+serviceName+" --tail 1000 2>&1", "")
+		logs := "(no logs)"
+		if res.Success {
+			logs = strings.TrimSpace(res.Stdout)
+			if logs == "" {
+				logs = "(no logs)"
+			}
+		}
+		lineCount := 0
+		if logs != "(no logs)" {
+			lineCount = len(strings.Split(logs, "\n"))
+		}
+		send(conn, map[string]interface{}{"type": "service-logs", "requestId": requestID, "logs": logs, "cursor": lineCount, "append": false})
+	} else {
+		res := run.Run("docker service logs "+serviceName+" --tail 1000 2>&1", "")
+		logs := "(no logs)"
+		if res.Success {
+			logs = strings.TrimSpace(res.Stdout)
+			if logs == "" {
+				logs = "(no logs)"
+			}
+		}
+		send(conn, map[string]interface{}{"type": "service-logs", "requestId": requestID, "logs": logs, "append": false})
 	}
-	send(conn, map[string]interface{}{"type": "service-logs", "requestId": requestID, "logs": logs})
 }
 
 func handleServiceStatus(conn *websocket.Conn, msg map[string]interface{}) {
