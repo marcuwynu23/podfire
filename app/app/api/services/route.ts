@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getSessionUserId } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { sanitizeStackName } from "@/lib/stack";
+import { createAndDispatchDeployment } from "@/lib/deploy-dispatch";
 
 function sanitizeName(name: string): string {
   return name
@@ -90,5 +91,7 @@ export async function POST(request: Request) {
       deployMode: mode,
     },
   });
+  createAndDispatchDeployment(service.id, userId, {}).catch(() => {});
+
   return NextResponse.json(service);
 }

@@ -129,7 +129,7 @@ export function CreateAppForm({
           buildCommand: buildCommand.trim() || undefined,
           outputDirectory: outputDirectory.trim() || undefined,
           env: buildEnvObject(envEntries) ?? undefined,
-          deployMode: "manual",
+          deployMode: "auto",
         }),
       });
       const data = await res.json();
