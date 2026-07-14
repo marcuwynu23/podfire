@@ -386,6 +386,7 @@ export function AppDetailTabs({
             stackName={service.stackName ?? service.name}
             currentReplicas={currentReplicas}
             appUrl={appUrl}
+            status={status}
             warmingUp={warmingUp}
           />
         )}

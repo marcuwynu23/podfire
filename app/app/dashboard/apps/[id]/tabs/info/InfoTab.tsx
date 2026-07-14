@@ -8,6 +8,7 @@ type Props = {
   stackName: string | null;
   currentReplicas: number;
   appUrl: string;
+  status: string;
   warmingUp?: boolean;
 };
 
@@ -17,7 +18,7 @@ function pingUrl(url: string, signal: AbortSignal): Promise<boolean> {
     .catch(() => false);
 }
 
-export function InfoTab({ repoUrl, branch, stackName, currentReplicas, appUrl, warmingUp }: Props) {
+export function InfoTab({ repoUrl, branch, stackName, currentReplicas, appUrl, status, warmingUp }: Props) {
   const [ready, setReady] = useState(false);
   const mountedRef = useRef(true);
 
@@ -46,7 +47,7 @@ export function InfoTab({ repoUrl, branch, stackName, currentReplicas, appUrl, w
     };
   }, [appUrl]);
 
-  const loading = warmingUp || !ready;
+  const loading = status !== "running" && (warmingUp || !ready);
 
   return (
     <div className="p-4 sm:p-6">
