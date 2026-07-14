@@ -50,6 +50,7 @@ export function AppDetailTabs({
   const moreRef = useRef<HTMLDivElement>(null);
   const [warmingUp, setWarmingUp] = useState(false);
   const wasBusyRef = useRef(false);
+  const [checkMessage, setCheckMessage] = useState<string | null>(null);
 
   useEffect(() => {
     if (activeTab === "diagnostics" && !diagnosticsEnabled) {
@@ -203,6 +204,7 @@ export function AppDetailTabs({
                 <CheckForUpdatesButton
                   serviceId={service.id}
                   onTriggered={() => router.refresh()}
+                  onMessage={setCheckMessage}
                   compact
                 />
               )}
@@ -235,9 +237,9 @@ export function AppDetailTabs({
             {replicasError && (
               <p className="text-xs text-amber-400">{replicasError}</p>
             )}
-            <span className="text-xs text-gl-text-muted">
-              Deploy is run by the agent (queued then processed)
-            </span>
+            {checkMessage && (
+              <p className="text-xs text-gl-text-muted">{checkMessage}</p>
+            )}
           </div>
         </div>
 

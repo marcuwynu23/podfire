@@ -7,14 +7,15 @@ const POLL_INTERVAL_MS = 2 * 60 * 1000; // 2 minutes
 export function CheckForUpdatesButton({
   serviceId,
   onTriggered,
+  onMessage,
   compact,
 }: {
   serviceId: string;
   onTriggered: () => void;
+  onMessage?: (msg: string | null) => void;
   compact?: boolean;
 }) {
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
   const onTriggeredRef = useRef(onTriggered);
 
   useEffect(() => {
@@ -23,14 +24,14 @@ export function CheckForUpdatesButton({
 
   async function check() {
     setLoading(true);
-    setMessage(null);
+    onMessage?.(null);
     try {
       const res = await fetch(`/api/services/${serviceId}/check-updates`, { method: "POST" });
       const data = (await res.json()) as { triggered?: boolean; message?: string };
-      setMessage(data.message ?? (data.triggered ? "Deploy triggered." : "No new commits."));
+      onMessage?.(data.message ?? (data.triggered ? "Deploy triggered." : "No new commits."));
       if (data.triggered) onTriggeredRef.current();
     } catch {
-      setMessage("Request failed");
+      onMessage?.("Request failed");
     } finally {
       setLoading(false);
     }
@@ -50,23 +51,18 @@ export function CheckForUpdatesButton({
   }, [serviceId]);
 
   return (
-    <div className="flex flex-col items-end gap-0.5">
-      <button
-        type="button"
-        onClick={check}
-        disabled={loading}
-        className={
-          compact
-            ? "rounded-lg border border-gl-edge bg-gl-input-bg px-3 py-1.5 text-xs font-medium text-gl-text-muted transition hover:bg-gl-hover disabled:opacity-50"
-            : "rounded-xl border border-gl-edge bg-gl-input-bg px-4 py-2.5 text-sm font-medium text-gl-text-muted transition hover:bg-gl-hover disabled:opacity-50"
-        }
-        title="Check branch for new commits and deploy if any (auto-deploy checks every 2 min while this page is open)"
-      >
-        {loading ? "Checking…" : "Check"}
-      </button>
-      {message && (
-        <span className="text-xs text-gl-text-muted whitespace-nowrap">{message}</span>
-      )}
-    </div>
+    <button
+      type="button"
+      onClick={check}
+      disabled={loading}
+      className={
+        compact
+          ? "rounded-lg border border-gl-edge bg-gl-input-bg px-3 py-1.5 text-xs font-medium text-gl-text-muted transition hover:bg-gl-hover disabled:opacity-50"
+          : "rounded-xl border border-gl-edge bg-gl-input-bg px-4 py-2.5 text-sm font-medium text-gl-text-muted transition hover:bg-gl-hover disabled:opacity-50"
+      }
+      title="Check branch for new commits and deploy if any (auto-deploy checks every 2 min while this page is open)"
+    >
+      {loading ? "Checking…" : "Check"}
+    </button>
   );
 }
