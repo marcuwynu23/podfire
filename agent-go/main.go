@@ -488,76 +488,34 @@ func handleServiceLogs(conn *websocket.Conn, msg map[string]interface{}) {
 	stackName, _ := msg["stackName"].(string)
 	stackName = strings.TrimSpace(stackName)
 	safe := docker.SanitizeForDocker(stackName)
-	svcName := safe + "_app"
+	filter := safe + "_app"
 
-	// Get most recent task per replica to filter out stale container logs
-	psRes := run.Run("docker service ps "+svcName+" --no-trunc --format '{{.ID}} {{.Name}}' 2>&1", "")
-	recentTasks := make(map[int]string) // replica → taskID
-	if psRes.Success {
-		for _, line := range strings.Split(psRes.Stdout, "\n") {
-			line = strings.TrimSpace(line)
-			if line == "" {
-				continue
+	// Get currently running container IDs for this service
+	lsRes := run.Run("docker container ls --filter name="+filter+" --format '{{.ID}}' 2>&1", "")
+	containerIDs := strings.Fields(lsRes.Stdout)
+
+	if len(containerIDs) == 0 {
+		send(conn, map[string]interface{}{"type": "service-logs", "requestId": requestID, "logs": "(no running containers)"})
+		return
+	}
+
+	var allLogs []string
+	for _, cid := range containerIDs {
+		res := run.Run("docker logs "+cid+" --tail 1000 2>&1", "")
+		part := strings.TrimSpace(res.Stdout + "\n" + res.Stderr)
+		if part != "" {
+			// Prepend the container hostname so the log viewer can distinguish replicas
+			hostRes := run.Run("docker inspect --format '{{.Config.Hostname}}' "+cid+" 2>&1", "")
+			hostname := strings.TrimSpace(hostRes.Stdout)
+			prefix := filter
+			if hostname != "" {
+				prefix = hostname
 			}
-			parts := strings.Fields(line)
-			if len(parts) < 2 {
-				continue
-			}
-			taskID := parts[0]
-			nameParts := strings.Split(parts[1], ".")
-			if len(nameParts) < 2 {
-				continue
-			}
-			replicaNum, err := strconv.Atoi(nameParts[1])
-			if err != nil {
-				continue
-			}
-			if _, ok := recentTasks[replicaNum]; !ok {
-				recentTasks[replicaNum] = taskID
-			}
+			allLogs = append(allLogs, "["+prefix+"] "+part)
 		}
 	}
 
-	res := run.Run("docker service logs "+svcName+" --tail 1000 2>&1", "")
-	raw := strings.TrimSpace(res.Stdout + "\n" + res.Stderr)
-
-	var logs string
-	if len(recentTasks) > 0 {
-		lines := strings.Split(raw, "\n")
-		var filtered []string
-		for _, l := range lines {
-			// Line format: service.replica.taskid@node | message
-			if strings.Contains(l, "@") {
-				parts := strings.SplitN(l, "@", 2)
-				if len(parts) < 2 {
-					filtered = append(filtered, l)
-					continue
-				}
-				dotParts := strings.Split(parts[0], ".")
-				if len(dotParts) < 1 {
-					filtered = append(filtered, l)
-					continue
-				}
-				candidate := dotParts[len(dotParts)-1]
-				keep := false
-				for _, tid := range recentTasks {
-					if candidate == tid {
-						keep = true
-						break
-					}
-				}
-				if keep {
-					filtered = append(filtered, l)
-				}
-			} else {
-				// Lines without a @ prefix (e.g. raw output from inside the container) are always shown
-				filtered = append(filtered, l)
-			}
-		}
-		logs = strings.TrimSpace(strings.Join(filtered, "\n"))
-	} else {
-		logs = raw
-	}
+	logs := strings.Join(allLogs, "\n---\n")
 	if logs == "" {
 		logs = "(no logs)"
 	}

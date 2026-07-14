@@ -455,43 +455,28 @@ function connect(): WebSocket {
         const requestId = msg.requestId as string;
         const stackName = String(msg.stackName).trim();
         const safe = sanitizeForDocker(stackName);
-        const serviceName = `${safe}_app`;
-        // Get most recent task per replica to filter out stale container logs
-        const ps = runCommand(
-          `docker service ps ${serviceName} --no-trunc --format '{{.ID}} {{.Name}}' 2>&1`,
+        const filter = `${safe}_app`;
+        // Get currently running container IDs for this service
+        const ls = runCommand(
+          `docker container ls --filter name=${filter} --format '{{.ID}}' 2>&1`,
         );
-        const recentTaskIds = new Set<string>();
-        const seenReplicas = new Set<number>();
-        if (ps.success) {
-          for (const line of ps.stdout.split("\n")) {
-            const parts = line.trim().split(/\s+/);
-            if (parts.length >= 2) {
-              const nameParts = parts[1].split(".");
-              const replicaNum = parseInt(nameParts[1], 10);
-              if (!isNaN(replicaNum) && !seenReplicas.has(replicaNum)) {
-                seenReplicas.add(replicaNum);
-                recentTaskIds.add(parts[0]);
-              }
-            }
+        const containerIds = (ls.stdout || "").trim().split(/\s+/).filter(Boolean);
+        if (containerIds.length === 0) {
+          ws.send(JSON.stringify({type: "service-logs", requestId, logs: "(no running containers)"}));
+          return;
+        }
+        const logs: string[] = [];
+        for (const cid of containerIds) {
+          const result = runCommand(`docker logs ${cid} --tail 1000 2>&1`);
+          const part = [result.stdout, result.stderr].filter(Boolean).join("\n").trim();
+          if (part) {
+            // Prefix with container short ID so the log viewer can distinguish replicas
+            const shortId = cid.substring(0, 12);
+            logs.push(`[${shortId}] ${part}`);
           }
         }
-        const result = runCommand(
-          `docker service logs ${serviceName} --tail 1000 2>&1`,
-        );
-        const raw = [result.stdout, result.stderr].filter(Boolean).join("\n");
-        const lines = raw.split("\n");
-        const filtered =
-          recentTaskIds.size > 0
-            ? lines.filter((l) => {
-                const m = l.match(/\.([a-zA-Z0-9]+)@/);
-                // Lines without a @ task prefix (e.g. raw container output) are always shown
-                if (!m) return true;
-                return recentTaskIds.has(m[1]);
-              }).join("\n")
-            : raw;
-        const logs = filtered.trim() || "(no logs)";
         if (ws.readyState === WebSocket.OPEN) {
-          ws.send(JSON.stringify({type: "service-logs", requestId, logs}));
+          ws.send(JSON.stringify({type: "service-logs", requestId, logs: logs.join("\n---\n") || "(no logs)"}));
         }
       } else if (
         msg.type === "get-service-status" &&
