@@ -456,12 +456,38 @@ function connect(): WebSocket {
         const stackName = String(msg.stackName).trim();
         const safe = sanitizeForDocker(stackName);
         const serviceName = `${safe}_app`;
+        // Get most recent task per replica to filter out stale container logs
+        const ps = runCommand(
+          `docker service ps ${serviceName} --no-trunc --format '{{.ID}} {{.Name}}' 2>&1`,
+        );
+        const recentTaskIds = new Set<string>();
+        const seenReplicas = new Set<number>();
+        if (ps.success) {
+          for (const line of ps.stdout.split("\n")) {
+            const parts = line.trim().split(/\s+/);
+            if (parts.length >= 2) {
+              const nameParts = parts[1].split(".");
+              const replicaNum = parseInt(nameParts[1], 10);
+              if (!isNaN(replicaNum) && !seenReplicas.has(replicaNum)) {
+                seenReplicas.add(replicaNum);
+                recentTaskIds.add(parts[0]);
+              }
+            }
+          }
+        }
         const result = runCommand(
           `docker service logs ${serviceName} --tail 1000 2>&1`,
         );
-        const logs =
-          [result.stdout, result.stderr].filter(Boolean).join("\n").trim() ||
-          "(no logs)";
+        const raw = [result.stdout, result.stderr].filter(Boolean).join("\n");
+        const lines = raw.split("\n");
+        const filtered =
+          recentTaskIds.size > 0
+            ? lines.filter((l) => {
+                const m = l.match(/\.([a-zA-Z0-9]+)@/);
+                return m && recentTaskIds.has(m[1]);
+              }).join("\n")
+            : raw;
+        const logs = filtered.trim() || "(no logs)";
         if (ws.readyState === WebSocket.OPEN) {
           ws.send(JSON.stringify({type: "service-logs", requestId, logs}));
         }

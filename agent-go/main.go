@@ -489,8 +489,64 @@ func handleServiceLogs(conn *websocket.Conn, msg map[string]interface{}) {
 	stackName = strings.TrimSpace(stackName)
 	safe := docker.SanitizeForDocker(stackName)
 	svcName := safe + "_app"
+
+	// Get most recent task per replica to filter out stale container logs
+	psRes := run.Run("docker service ps "+svcName+" --no-trunc --format '{{.ID}} {{.Name}}' 2>&1", "")
+	recentTasks := make(map[int]string) // replica → taskID
+	if psRes.Success {
+		for _, line := range strings.Split(psRes.Stdout, "\n") {
+			line = strings.TrimSpace(line)
+			if line == "" {
+				continue
+			}
+			parts := strings.Fields(line)
+			if len(parts) < 2 {
+				continue
+			}
+			taskID := parts[0]
+			nameParts := strings.Split(parts[1], ".")
+			if len(nameParts) < 2 {
+				continue
+			}
+			replicaNum, err := strconv.Atoi(nameParts[1])
+			if err != nil {
+				continue
+			}
+			if _, ok := recentTasks[replicaNum]; !ok {
+				recentTasks[replicaNum] = taskID
+			}
+		}
+	}
+
 	res := run.Run("docker service logs "+svcName+" --tail 1000 2>&1", "")
-	logs := strings.TrimSpace(res.Stdout + "\n" + res.Stderr)
+	raw := strings.TrimSpace(res.Stdout + "\n" + res.Stderr)
+
+	var logs string
+	if len(recentTasks) > 0 {
+		lines := strings.Split(raw, "\n")
+		var filtered []string
+		for _, l := range lines {
+			// Line format: service.replica.taskid@node | message
+			parts := strings.SplitN(l, "@", 2)
+			if len(parts) < 2 {
+				continue
+			}
+			dotParts := strings.Split(parts[0], ".")
+			if len(dotParts) < 1 {
+				continue
+			}
+			candidate := dotParts[len(dotParts)-1]
+			for _, tid := range recentTasks {
+				if candidate == tid {
+					filtered = append(filtered, l)
+					break
+				}
+			}
+		}
+		logs = strings.TrimSpace(strings.Join(filtered, "\n"))
+	} else {
+		logs = raw
+	}
 	if logs == "" {
 		logs = "(no logs)"
 	}
