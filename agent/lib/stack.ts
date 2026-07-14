@@ -60,6 +60,10 @@ ${resources}      restart_policy:
         - "traefik.http.routers.${safe}.entrypoints=web"
         - "traefik.http.routers.${safe}.service=${traefikServiceName}"
         - "traefik.http.services.${traefikServiceName}.loadbalancer.server.port=${port}"
+        - "traefik.http.services.${traefikServiceName}.loadbalancer.healthcheck.path=/health"
+        - "traefik.http.services.${traefikServiceName}.loadbalancer.healthcheck.interval=10s"
+        - "traefik.http.services.${traefikServiceName}.loadbalancer.healthcheck.timeout=3s"
+        - "traefik.http.services.${traefikServiceName}.loadbalancer.healthcheck.retries=2"
 `;
 }
 

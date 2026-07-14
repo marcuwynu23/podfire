@@ -527,20 +527,31 @@ func handleServiceLogs(conn *websocket.Conn, msg map[string]interface{}) {
 		var filtered []string
 		for _, l := range lines {
 			// Line format: service.replica.taskid@node | message
-			parts := strings.SplitN(l, "@", 2)
-			if len(parts) < 2 {
-				continue
-			}
-			dotParts := strings.Split(parts[0], ".")
-			if len(dotParts) < 1 {
-				continue
-			}
-			candidate := dotParts[len(dotParts)-1]
-			for _, tid := range recentTasks {
-				if candidate == tid {
+			if strings.Contains(l, "@") {
+				parts := strings.SplitN(l, "@", 2)
+				if len(parts) < 2 {
 					filtered = append(filtered, l)
-					break
+					continue
 				}
+				dotParts := strings.Split(parts[0], ".")
+				if len(dotParts) < 1 {
+					filtered = append(filtered, l)
+					continue
+				}
+				candidate := dotParts[len(dotParts)-1]
+				keep := false
+				for _, tid := range recentTasks {
+					if candidate == tid {
+						keep = true
+						break
+					}
+				}
+				if keep {
+					filtered = append(filtered, l)
+				}
+			} else {
+				// Lines without a @ prefix (e.g. raw output from inside the container) are always shown
+				filtered = append(filtered, l)
 			}
 		}
 		logs = strings.TrimSpace(strings.Join(filtered, "\n"))

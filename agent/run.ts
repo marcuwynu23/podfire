@@ -484,7 +484,9 @@ function connect(): WebSocket {
           recentTaskIds.size > 0
             ? lines.filter((l) => {
                 const m = l.match(/\.([a-zA-Z0-9]+)@/);
-                return m && recentTaskIds.has(m[1]);
+                // Lines without a @ task prefix (e.g. raw container output) are always shown
+                if (!m) return true;
+                return recentTaskIds.has(m[1]);
               }).join("\n")
             : raw;
         const logs = filtered.trim() || "(no logs)";
