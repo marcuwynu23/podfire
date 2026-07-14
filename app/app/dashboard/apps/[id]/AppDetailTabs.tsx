@@ -203,9 +203,9 @@ export function AppDetailTabs({
                 <CheckForUpdatesButton
                   serviceId={service.id}
                   onTriggered={() => router.refresh()}
+                  compact
                 />
               )}
-              <span className="mx-1 hidden h-6 w-px bg-gl-edge sm:inline" aria-hidden />
               <span className="text-xs text-gl-text-muted">Replicas</span>
               <input
                 type="number"

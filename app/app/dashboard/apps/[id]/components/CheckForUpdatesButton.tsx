@@ -7,9 +7,11 @@ const POLL_INTERVAL_MS = 2 * 60 * 1000; // 2 minutes
 export function CheckForUpdatesButton({
   serviceId,
   onTriggered,
+  compact,
 }: {
   serviceId: string;
   onTriggered: () => void;
+  compact?: boolean;
 }) {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -53,13 +55,17 @@ export function CheckForUpdatesButton({
         type="button"
         onClick={check}
         disabled={loading}
-        className="rounded-xl border border-gl-edge bg-gl-input-bg px-4 py-2.5 text-sm font-medium text-gl-text-muted transition hover:bg-gl-hover disabled:opacity-50"
+        className={
+          compact
+            ? "rounded-lg border border-gl-edge bg-gl-input-bg px-3 py-1.5 text-xs font-medium text-gl-text-muted transition hover:bg-gl-hover disabled:opacity-50"
+            : "rounded-xl border border-gl-edge bg-gl-input-bg px-4 py-2.5 text-sm font-medium text-gl-text-muted transition hover:bg-gl-hover disabled:opacity-50"
+        }
         title="Check branch for new commits and deploy if any (auto-deploy checks every 2 min while this page is open)"
       >
-        {loading ? "Checking…" : "Check for updates"}
+        {loading ? "Checking…" : "Check"}
       </button>
       {message && (
-        <span className="text-xs text-gl-text-muted">{message}</span>
+        <span className="text-xs text-gl-text-muted whitespace-nowrap">{message}</span>
       )}
     </div>
   );
