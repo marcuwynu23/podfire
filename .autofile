@@ -1,4 +1,8 @@
+# PodFire autofile — run `autofile dev` to start all dev servers
+# Requires: autofile CLI (npm install -g autofile)
+# Each + block runs in its own terminal.
+
 dev {
-    + cd app && npm install && npm run dev:all
-    + cd agent && npm install && npm run dev
+    + cd app && pnpm install && pnpm dev:all
+    + cd agent && pnpm install && pnpm dev
 }
