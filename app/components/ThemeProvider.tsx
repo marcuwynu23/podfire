@@ -27,11 +27,11 @@ function getInitialTheme(): Theme {
 }
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>("dark");
+  const [theme, setThemeState] = useState<Theme>(getInitialTheme);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setThemeState(getInitialTheme());
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- hydration guard
     setMounted(true);
   }, []);
 

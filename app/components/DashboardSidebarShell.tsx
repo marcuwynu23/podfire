@@ -13,23 +13,15 @@ export function DashboardSidebarShell({
   displayName: string | null;
   children: React.ReactNode;
 }) {
-  const [collapsed, setCollapsed] = useState(false);
-  const [mounted, setMounted] = useState(false);
-  const {mobileMenuOpen, setMobileMenuOpen} = useDashboardMobile();
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  useEffect(() => {
-    if (!mounted) return;
+  const [collapsed, setCollapsed] = useState(() => {
+    if (typeof window === "undefined") return false;
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      setCollapsed(raw === "true");
+      return localStorage.getItem(STORAGE_KEY) === "true";
     } catch {
-      setCollapsed(false);
+      return false;
     }
-  }, [mounted]);
+  });
+  const {mobileMenuOpen, setMobileMenuOpen} = useDashboardMobile();
 
   const persistCollapsed = (value: boolean) => {
     setCollapsed(value);
