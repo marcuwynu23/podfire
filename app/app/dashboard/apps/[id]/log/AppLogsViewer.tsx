@@ -19,9 +19,11 @@ export function AppLogsViewer({
   const preRef = useRef<HTMLPreElement>(null);
   const wasAtBottomRef = useRef(true);
 
-  const fetchLogs = useCallback(async () => {
-    setError(null);
-    setLoading(true);
+  const fetchLogs = useCallback(async function fetchLogsInner(initialFetch?: boolean) {
+    if (!initialFetch) {
+      setError(null);
+      setLoading(true);
+    }
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
     try {
@@ -53,9 +55,10 @@ export function AppLogsViewer({
 
   // Live polling: fetch on mount and every N seconds when live=true
   useEffect(() => {
-    fetchLogs();
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional fetch on mount
+    fetchLogs(true);
     if (!live) return;
-    const interval = setInterval(fetchLogs, LIVE_POLL_INTERVAL_MS);
+    const interval = setInterval(() => fetchLogs(true), LIVE_POLL_INTERVAL_MS);
     return () => clearInterval(interval);
   }, [live, serviceId, fetchLogs]);
 

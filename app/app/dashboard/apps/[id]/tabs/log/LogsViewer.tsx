@@ -24,8 +24,8 @@ export function LogsViewer({
     let cancelled = false;
     let retryCount = 0;
     const maxRetries = 5;
-    setFetchError(null);
     const poll = async () => {
+      setFetchError(null);
       try {
         const url =
           typeof window !== "undefined"

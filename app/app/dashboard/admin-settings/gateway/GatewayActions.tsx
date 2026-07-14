@@ -45,7 +45,6 @@ export function GatewayActions() {
 
   useEffect(() => {
     let cancelled = false;
-    setYamlLoadState("loading");
     fetch("/api/traefik/config", {cache: "no-store"})
       .then((res) => res.json())
       .then((data: {yaml?: string; error?: string}) => {
