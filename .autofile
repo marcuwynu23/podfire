@@ -1,5 +1,5 @@
-# PodFire autofile — run `autofile dev` to start all dev servers
-# Requires: autofile CLI (npm install -g autofile)
+# PodFire autofile — run `auto dev` to start all dev servers
+# Requires: auto cli found in https://github.com/marcuwynu23/Auto/releases
 # Each + block runs in its own terminal.
 
 dev {
