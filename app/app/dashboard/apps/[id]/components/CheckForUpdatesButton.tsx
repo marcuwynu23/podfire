@@ -14,7 +14,10 @@ export function CheckForUpdatesButton({
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const onTriggeredRef = useRef(onTriggered);
-  onTriggeredRef.current = onTriggered;
+
+  useEffect(() => {
+    onTriggeredRef.current = onTriggered;
+  }, [onTriggered]);
 
   async function check() {
     setLoading(true);
