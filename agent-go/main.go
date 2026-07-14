@@ -331,6 +331,19 @@ func runDeployFromJob(conn *websocket.Conn, p *DeployPayload) {
 	sendLog("Build completed successfully.")
 	sendLog("")
 
+	sendLog("=== AUTO-DETECT CONTAINER PORT ===")
+	detectedPort, found := docker.DetectExposedPort(imageTag)
+	effectivePort := p.Port
+	if found && detectedPort != p.Port {
+		sendLog("Docker image exposes port " + strconv.Itoa(detectedPort) + ", overriding configured port " + strconv.Itoa(p.Port) + ".")
+		effectivePort = detectedPort
+	} else if found {
+		sendLog("Docker image exposes port " + strconv.Itoa(detectedPort) + " (matches configured port).")
+	} else {
+		sendLog("No EXPOSE directive found in image; using configured port " + strconv.Itoa(p.Port) + ".")
+	}
+	sendLog("")
+
 	if docker.UseLocalOnly() {
 		sendLog("=== PHASE 5: SKIP PUSH (local only) ===")
 		sendPhase("push", 0)
@@ -368,7 +381,7 @@ func runDeployFromJob(conn *websocket.Conn, p *DeployPayload) {
 	if opts.Replicas < 1 {
 		opts.Replicas = 1
 	}
-	yaml := stack.GenerateStackYaml(stackName, imageTag, p.Port, opts)
+	yaml := stack.GenerateStackYaml(stackName, imageTag, effectivePort, opts)
 	if err := stack.DeployStack(stackName, yaml); err != nil {
 		sendLog("Error: " + err.Error())
 		sendPhase("deploy", time.Since(phaseStart).Seconds())

@@ -1,7 +1,10 @@
 package docker
 
 import (
+	"encoding/json"
+	"os/exec"
 	"regexp"
+	"strconv"
 	"strings"
 )
 
@@ -26,6 +29,32 @@ func GetImageTag(serviceName, commitOrTag string) string {
 		return safe + ":" + commitOrTag
 	}
 	return r + "/" + safe + ":" + commitOrTag
+}
+
+// DetectExposedPort checks the image for EXPOSE directives and returns the first port.
+func DetectExposedPort(imageTag string) (int, bool) {
+	cmd := exec.Command("docker", "image", "inspect", imageTag,
+		"--format", "{{json .ContainerConfig.ExposedPorts}}")
+	out, err := cmd.Output()
+	if err != nil {
+		return 0, false
+	}
+	trimmed := strings.TrimSpace(string(out))
+	if trimmed == "" || trimmed == "null" || trimmed == "<no value>" {
+		return 0, false
+	}
+	var ports map[string]interface{}
+	if err := json.Unmarshal([]byte(trimmed), &ports); err != nil {
+		return 0, false
+	}
+	for key := range ports {
+		parts := strings.SplitN(key, "/", 2)
+		p, err := strconv.Atoi(parts[0])
+		if err == nil {
+			return p, true
+		}
+	}
+	return 0, false
 }
 
 // SanitizeForDocker normalizes a name for Docker (lowercase, alphanumeric and hyphens).

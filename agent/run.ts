@@ -6,7 +6,12 @@ import * as path from "path";
 import WebSocket from "ws";
 import {detectFramework} from "./lib/framework-detector.js";
 import {copyTemplateToRepo} from "./lib/template-loader.js";
-import {getImageTag, sanitizeForDocker, useLocalOnly} from "./lib/docker.js";
+import {
+  detectExposedPort,
+  getImageTag,
+  sanitizeForDocker,
+  useLocalOnly,
+} from "./lib/docker.js";
 import {
   generateStackYaml,
   deployStack,
@@ -158,6 +163,24 @@ function runDeployFromJob(
       sendLog("Build completed successfully.");
       sendLog("");
 
+      sendLog("=== AUTO-DETECT CONTAINER PORT ===");
+      const detectedPort = detectExposedPort(imageTag);
+      if (detectedPort !== null && detectedPort !== port) {
+        sendLog(
+          `Docker image exposes port ${detectedPort}, overriding configured port ${port}.`,
+        );
+      } else if (detectedPort !== null) {
+        sendLog(
+          `Docker image exposes port ${detectedPort} (matches configured port).`,
+        );
+      } else {
+        sendLog(
+          `No EXPOSE directive found in image; using configured port ${port}.`,
+        );
+      }
+      const effectivePort = detectedPort ?? port;
+      sendLog("");
+
       if (useLocalOnly()) {
         sendLog("=== PHASE 5: SKIP PUSH (local only) ===");
         sendLog("Using local image (no registry push).");
@@ -226,7 +249,7 @@ function runDeployFromJob(
       sendLog(
         `Env vars:    ${env ? Object.keys(env).join(", ") || "none" : "none"}`,
       );
-      const yaml = generateStackYaml(stack, imageTag, port, {
+      const yaml = generateStackYaml(stack, imageTag, effectivePort, {
         env,
         replicas,
         domain: payload.domain ?? undefined,
