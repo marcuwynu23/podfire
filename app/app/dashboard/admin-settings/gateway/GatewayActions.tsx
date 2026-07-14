@@ -3,7 +3,7 @@
 import {useState, useEffect} from "react";
 import {YamlEditor} from "./YamlEditor";
 
-type ConfirmAction = "update" | "restart" | "remove" | null;
+type ConfirmAction = "update" | "remove" | null;
 
 const CONFIRM_MESSAGES: Record<
   Exclude<ConfirmAction, null>,
@@ -11,11 +11,7 @@ const CONFIRM_MESSAGES: Record<
 > = {
   update: {
     title: "Save & Start Gateway",
-    body: "Apply this configuration and start the gateway? Your apps will be reachable once the stack is up.",
-  },
-  restart: {
-    title: "Restart Gateway",
-    body: "Remove the current gateway stack and redeploy with the configuration above. There may be a short period when apps are unreachable.",
+    body: "Apply this configuration and start the gateway? If already running, it will be restarted automatically with the new config. Apps may be briefly unreachable.",
   },
   remove: {
     title: "Stop Gateway",
@@ -31,9 +27,7 @@ export function GatewayActions() {
   const [updateState, setUpdateState] = useState<
     "idle" | "loading" | "success" | "error"
   >("idle");
-  const [restartState, setRestartState] = useState<
-    "idle" | "loading" | "success" | "error"
-  >("idle");
+
   const [removeState, setRemoveState] = useState<
     "idle" | "loading" | "success" | "error"
   >("idle");
@@ -93,7 +87,6 @@ export function GatewayActions() {
   async function runUpdate() {
     setConfirmAction(null);
     setUpdateState("loading");
-    setRestartState("idle");
     setRemoveState("idle");
     setMessage(null);
     try {
@@ -112,38 +105,6 @@ export function GatewayActions() {
     }
   }
 
-  async function handleRestart() {
-    if (!yaml.trim()) {
-      setMessage("Configuration is empty. Load or paste YAML first.");
-      return;
-    }
-    setConfirmAction("restart");
-  }
-
-  async function runRestart() {
-    setConfirmAction(null);
-    setRestartState("loading");
-    setUpdateState("idle");
-    setRemoveState("idle");
-    setMessage(null);
-    try {
-      const removeRes = await fetch("/api/traefik/remove", {method: "POST"});
-      const removeData = (await removeRes.json()) as {error?: string};
-      if (!removeRes.ok) {
-        setRestartState("error");
-        setMessage(removeData.error ?? "Remove failed");
-        return;
-      }
-      await new Promise((r) => setTimeout(r, 1500));
-      await deployWithYaml(yaml);
-      setRestartState("success");
-      setMessage("Gateway restarted with current configuration.");
-    } catch (err) {
-      setRestartState("error");
-      setMessage(err instanceof Error ? err.message : "Restart failed");
-    }
-  }
-
   function handleRemove() {
     setConfirmAction("remove");
   }
@@ -152,7 +113,6 @@ export function GatewayActions() {
     setConfirmAction(null);
     setRemoveState("loading");
     setUpdateState("idle");
-    setRestartState("idle");
     setMessage(null);
     try {
       const res = await fetch("/api/traefik/remove", {method: "POST"});
@@ -172,12 +132,10 @@ export function GatewayActions() {
 
   const hasError =
     updateState === "error" ||
-    restartState === "error" ||
     removeState === "error";
 
   function onConfirm() {
     if (confirmAction === "update") runUpdate();
-    else if (confirmAction === "restart") runRestart();
     else if (confirmAction === "remove") runRemove();
   }
 
@@ -230,8 +188,8 @@ export function GatewayActions() {
       >
         <h2 className="mb-2 text-lg font-medium text-gl-text">Configuration</h2>
         <p className="mb-4 text-sm text-gl-text-muted">
-          View and edit the Gateway (Traefik) stack YAML. Update to apply
-          changes, or Restart to remove and redeploy with this config.
+          View and edit the Gateway (Traefik) stack YAML. Save & Start applies
+          the config — if the gateway is already running it will be restarted.
         </p>
         {yamlLoadState === "loading" && (
           <p className="text-sm text-gl-text-muted">Loading configuration…</p>
@@ -257,33 +215,19 @@ export function GatewayActions() {
                 onClick={handleUpdate}
                 disabled={
                   updateState === "loading" ||
-                  restartState === "loading" ||
                   removeState === "loading"
                 }
                 className="w-full rounded-xl bg-primary px-4 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-primary-hover disabled:opacity-50 sm:w-auto sm:py-2"
               >
                 {updateState === "loading"
-                  ? "Updating…"
+                  ? "Deploying…"
                   : "Save & Start Gateway"}
-              </button>
-              <button
-                type="button"
-                onClick={handleRestart}
-                disabled={
-                  updateState === "loading" ||
-                  restartState === "loading" ||
-                  removeState === "loading"
-                }
-                className="w-full rounded-xl border border-gl-edge bg-gl-input-bg px-4 py-2.5 text-sm font-medium text-gl-text transition hover:bg-gl-hover disabled:opacity-50 sm:w-auto sm:py-2"
-              >
-                {restartState === "loading" ? "Restarting…" : "Restart Gateway"}
               </button>
               <button
                 type="button"
                 onClick={handleRemove}
                 disabled={
                   updateState === "loading" ||
-                  restartState === "loading" ||
                   removeState === "loading"
                 }
                 className="btn-danger w-full rounded-xl border px-4 py-2.5 text-sm font-medium transition disabled:opacity-50 sm:w-auto sm:py-2"
