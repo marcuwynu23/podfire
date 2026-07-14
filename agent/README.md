@@ -1,30 +1,31 @@
-# Dockly Agent
+# PodFire Agent (TypeScript)
 
-Connects to the web app via **WebSocket** and registers as a deploy agent. The app sends deploy jobs to connected agents; the agent runs clone, build, push, and stack deploy and streams logs/status back. No database required in the agent.
+Connects to the gateway via WebSocket and executes deploy jobs: clone, detect framework, build Docker image, and deploy Swarm stacks.
 
-## Setup
+See the main [README](../README.md) and [User Guide](../USER-GUIDE.md) for full setup and usage.
 
-1. **Point to the web app**
-
-   ```env
-   APP_URL=http://localhost:3000
-   ```
-
-   The agent connects to `ws://localhost:3000/ws/agent` and registers.
-
-2. **Optional**
-   - `AGENT_NAME` — display name when registered (default: podfire-agent)
-   - `DOCKER_REGISTRY` — leave unset for local images only
-
-3. **Install**
-   ```bash
-   npm install
-   ```
-
-## Run
+## Quick Start
 
 ```bash
-npm start
+cd agent
+cp .env.example .env
+pnpm install
+pnpm start
 ```
 
-Or `npm run dev` (same). Keep the agent running. When you click **Deploy** in the web app, the app sends the job to a connected agent. The agent must be running and registered before you can deploy.
+## Commands
+
+| Command | Description |
+|---|---|
+| `pnpm start` | Run the agent |
+| `pnpm dev` | Run the agent (same) |
+| `pnpm test` | Run tests |
+| `pnpm build` | Compile TypeScript |
+
+## Environment
+
+| Variable | Default | Description |
+|---|---|---|
+| `AGENT_GATEWAY_URL` | `http://localhost:3001` | Gateway WebSocket URL |
+| `AGENT_NAME` | `podfire-agent` | Display name in dashboard |
+| `DOCKER_REGISTRY` | unset | Push images to registry; leave unset for local-only |
