@@ -33,13 +33,25 @@ export async function buildDeployJob(serviceId: string, userId: string, options?
       // ignore
     }
   }
-  const port = service.port ?? 80;
+  let port = service.port;
+  if (port == null) {
+    const highest = await prisma.service.aggregate({
+      where: { userId },
+      _max: { port: true },
+    });
+    port = (highest._max.port ?? 8000) + 1;
+    await prisma.service.update({
+      where: { id: serviceId },
+      data: { port },
+    });
+  }
   let env: Record<string, string> | undefined;
   try {
     env = service.env ? (JSON.parse(service.env) as Record<string, string>) : undefined;
   } catch {
     env = undefined;
   }
+  env = { ...(env ?? {}), PORT: String(port) };
   return {
     service,
     cloneUrl,

@@ -5,10 +5,8 @@ import * as os from "os";
 import * as path from "path";
 import WebSocket from "ws";
 import {detectFramework} from "./lib/framework-detector.js";
-import {detectPortFromSource} from "./lib/port-detector.js";
 import {copyTemplateToRepo} from "./lib/template-loader.js";
 import {
-  detectExposedPort,
   getImageTag,
   sanitizeForDocker,
   useLocalOnly,
@@ -138,26 +136,6 @@ function runDeployFromJob(
         sendLog("");
       }
 
-      sendLog("=== SCAN SOURCE CODE FOR PORT ===");
-      const sourcePort = detectPortFromSource(repoPath);
-      if (sourcePort !== null) {
-        sendLog(`Detected port ${sourcePort} from source code.`);
-        if (framework !== "custom") {
-          const dockerfile = path.join(repoPath, "Dockerfile");
-          try {
-            let df = fs.readFileSync(dockerfile, "utf-8");
-            df = df.replace(/^EXPOSE\s+\d+/m, `EXPOSE ${sourcePort}`);
-            fs.writeFileSync(dockerfile, df);
-            sendLog(`Updated Dockerfile EXPOSE to ${sourcePort}.`);
-          } catch {
-            sendLog("(could not update Dockerfile EXPOSE)");
-          }
-        }
-      } else {
-        sendLog("No port detected from source code.");
-      }
-      sendLog("");
-
       phaseStart = Date.now();
       sendLog("=== PHASE 4: BUILD DOCKER IMAGE ===");
       const buildCmd = `docker build --progress=plain -t ${imageTag} .`;
@@ -184,22 +162,7 @@ function runDeployFromJob(
       sendLog("Build completed successfully.");
       sendLog("");
 
-      const imagePort = detectExposedPort(imageTag);
-      const effectivePort = sourcePort ?? imagePort ?? port;
-      sendLog("=== CONTAINER PORT SUMMARY ===");
-      if (sourcePort !== null) {
-        sendLog(`  Source code:  ${sourcePort} ✓ (used)`);
-      } else {
-        sendLog(`  Source code:  not found`);
-      }
-      if (imagePort !== null) {
-        sendLog(`  Docker EXPOSE: ${imagePort}${sourcePort !== null ? '' : ' (used)'}`);
-      } else {
-        sendLog(`  Docker EXPOSE: none`);
-      }
-      sendLog(`  Configured:  ${port}`);
-      sendLog(`  Effective:   ${effectivePort}`);
-      sendLog("");
+      sendLog(`Using container port ${port}`);
 
       if (useLocalOnly()) {
         sendLog("=== PHASE 5: SKIP PUSH (local only) ===");
@@ -269,7 +232,7 @@ function runDeployFromJob(
       sendLog(
         `Env vars:    ${env ? Object.keys(env).join(", ") || "none" : "none"}`,
       );
-      const yaml = generateStackYaml(stack, imageTag, effectivePort, {
+      const yaml = generateStackYaml(stack, imageTag, port, {
         env,
         replicas,
         domain: payload.domain ?? undefined,

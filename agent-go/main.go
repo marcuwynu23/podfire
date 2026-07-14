@@ -7,7 +7,6 @@ import (
 	"log"
 	"os"
 	"path/filepath"
-	"regexp"
 	"strconv"
 	"strings"
 	"sync"
@@ -316,25 +315,6 @@ func runDeployFromJob(conn *websocket.Conn, p *DeployPayload) {
 		sendLog("")
 	}
 
-	sendLog("=== SCAN SOURCE CODE FOR PORT ===")
-	sourcePort := docker.DetectPortFromSource(repoPath)
-	if sourcePort > 0 {
-		sendLog("Detected port " + strconv.Itoa(sourcePort) + " from source code.")
-		if fw != framework.FrameworkCustom {
-			dockerfile := filepath.Join(repoPath, "Dockerfile")
-			if data, err := os.ReadFile(dockerfile); err == nil {
-				re := regexp.MustCompile(`(?m)^EXPOSE\s+\d+`)
-				updated := re.ReplaceAll(data, []byte("EXPOSE "+strconv.Itoa(sourcePort)))
-				if err := os.WriteFile(dockerfile, updated, 0600); err == nil {
-					sendLog("Updated Dockerfile EXPOSE to " + strconv.Itoa(sourcePort) + ".")
-				}
-			}
-		}
-	} else {
-		sendLog("No port detected from source code.")
-	}
-	sendLog("")
-
 	phaseStart = time.Now()
 	sendLog("=== PHASE 4: BUILD DOCKER IMAGE ===")
 	buildCmd := "docker build --progress=plain -t " + imageTag + " ."
@@ -351,33 +331,7 @@ func runDeployFromJob(conn *websocket.Conn, p *DeployPayload) {
 	sendLog("Build completed successfully.")
 	sendLog("")
 
-	imagePort, imagePortFound := docker.DetectExposedPort(imageTag)
-	effectivePort := p.Port
-	if sourcePort > 0 {
-		effectivePort = sourcePort
-	} else if imagePortFound {
-		effectivePort = imagePort
-	}
-	sendLog("=== CONTAINER PORT SUMMARY ===")
-	if sourcePort > 0 {
-		sendLog("  Source code:  " + strconv.Itoa(sourcePort) + " ✓ (used)")
-	} else {
-		sendLog("  Source code:  not found")
-	}
-	if imagePortFound {
-		note := ""
-		if sourcePort > 0 {
-			note = ""
-		} else {
-			note = " (used)"
-		}
-		sendLog("  Docker EXPOSE: " + strconv.Itoa(imagePort) + note)
-	} else {
-		sendLog("  Docker EXPOSE: none")
-	}
-	sendLog("  Configured:  " + strconv.Itoa(p.Port))
-	sendLog("  Effective:   " + strconv.Itoa(effectivePort))
-	sendLog("")
+	sendLog("Using container port " + strconv.Itoa(p.Port))
 
 	if docker.UseLocalOnly() {
 		sendLog("=== PHASE 5: SKIP PUSH (local only) ===")
@@ -416,7 +370,7 @@ func runDeployFromJob(conn *websocket.Conn, p *DeployPayload) {
 	if opts.Replicas < 1 {
 		opts.Replicas = 1
 	}
-	yaml := stack.GenerateStackYaml(stackName, imageTag, effectivePort, opts)
+	yaml := stack.GenerateStackYaml(stackName, imageTag, p.Port, opts)
 	if err := stack.DeployStack(stackName, yaml); err != nil {
 		sendLog("Error: " + err.Error())
 		sendPhase("deploy", time.Since(phaseStart).Seconds())

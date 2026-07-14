@@ -75,13 +75,25 @@ export async function POST(request: Request) {
     },
   });
 
-  const port = service.port ?? 80;
+  let port = service.port;
+  if (port == null) {
+    const highest = await prisma.service.aggregate({
+      where: { userId },
+      _max: { port: true },
+    });
+    port = (highest._max.port ?? 8000) + 1;
+    service = await prisma.service.update({
+      where: { id: service.id },
+      data: { port },
+    });
+  }
   let env: Record<string, string> | undefined;
   try {
     env = service.env ? (JSON.parse(service.env) as Record<string, string>) : undefined;
   } catch {
     env = undefined;
   }
+  env = { ...(env ?? {}), PORT: String(port) };
   const domain = (service as { domain?: string | null }).domain ?? null;
   const job = {
     deploymentId: deployment.id,
