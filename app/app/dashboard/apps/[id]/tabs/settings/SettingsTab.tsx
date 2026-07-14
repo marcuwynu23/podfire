@@ -5,6 +5,7 @@ import { DomainSetting } from "./domain/DomainSetting";
 import { DeployModeSetting } from "./deployment/DeployModeSetting";
 import { DiagnosticsSetting } from "./diagnostics/DiagnosticsSetting";
 import { BuildSetting } from "./buildsetting/BuildSetting";
+import { PortSetting } from "./port/PortSetting";
 import { DangerZoneSetting } from "./danger-zone/DangerZoneSetting";
 
 export function SettingsPanel({
@@ -12,6 +13,7 @@ export function SettingsPanel({
   appName,
   deployMode,
   domain,
+  port,
   diagnosticsEnabled,
   entryCommand,
   buildCommand,
@@ -22,6 +24,7 @@ export function SettingsPanel({
   appName: string;
   deployMode: string;
   domain?: string | null;
+  port?: number | null;
   diagnosticsEnabled?: boolean;
   entryCommand?: string | null;
   buildCommand?: string | null;
@@ -32,7 +35,7 @@ export function SettingsPanel({
     <div className="p-4 sm:p-6">
       <h2 className="text-base font-semibold text-gl-text">Settings</h2>
       <p className="mt-0.5 text-sm text-gl-text-muted">
-        Domain, deploy mode, diagnostics, build options, and danger zone.
+        Domain, container port, deploy mode, diagnostics, build options, and danger zone.
       </p>
 
       <div className="mt-4 sm:mt-6">
@@ -40,6 +43,14 @@ export function SettingsPanel({
           <DomainSetting
             serviceId={serviceId}
             currentDomain={domain ?? null}
+            onSaved={onSaved}
+          />
+        </AccordionSection>
+
+        <AccordionSection id="portSection" title="Container port" defaultOpen>
+          <PortSetting
+            serviceId={serviceId}
+            currentPort={port ?? null}
             onSaved={onSaved}
           />
         </AccordionSection>

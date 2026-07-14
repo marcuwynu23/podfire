@@ -410,6 +410,7 @@ export function AppDetailTabs({
               (service as {deployMode?: string}).deployMode ?? "manual"
             }
             domain={(service as {domain?: string | null}).domain ?? null}
+            port={(service as {port?: number | null}).port ?? null}
             diagnosticsEnabled={diagnosticsEnabled}
             entryCommand={
               (service as {entryCommand?: string | null}).entryCommand ?? null
