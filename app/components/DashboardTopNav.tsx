@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import {useState, useRef, useEffect} from "react";
 import {useDashboardMobile} from "./DashboardMobileContext";
 
@@ -26,7 +27,7 @@ export function DashboardTopNav({displayName}: {displayName: string | null}) {
             href="/dashboard"
             className="flex shrink-0 items-center gap-2 transition hover:opacity-90"
           >
-            <img src="/favicon.svg" alt="" className="h-8 w-8" aria-hidden />
+            <Image src="/favicon.svg" alt="" width={32} height={32} className="h-8 w-8" aria-hidden />
             <span className="hidden sm:flex sm:flex-col">
               <span className="text-fire text-base font-semibold leading-tight">
                 PodFire

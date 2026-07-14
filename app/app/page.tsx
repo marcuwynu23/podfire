@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 
 export default async function HomePage({
   searchParams,
@@ -14,7 +15,7 @@ export default async function HomePage({
       <section className="relative flex flex-1 flex-col justify-center px-6 py-16 lg:w-3/4 lg:px-16 lg:py-20 hero-bg-animated">
         <div className="relative mx-auto w-full max-w-lg space-y-10">
           <div>
-            <img src="/favicon.svg" alt="PodFire" className="h-14 w-14" />
+            <Image src="/favicon.svg" alt="PodFire" width={56} height={56} className="h-14 w-14" />
             <h1 className="mt-6 text-3xl font-semibold tracking-tight text-[var(--gl-text)] sm:text-4xl lg:text-5xl">
               PodFire
             </h1>
