@@ -31,6 +31,7 @@ setOnDeployDispatched((deploymentId, { agentName }) => {
 });
 
 const traefikStatusPending = new Map();
+const traefikDeployPending = new Map();
 const availablePortPending = new Map();
 const serviceLogsPending = new Map();
 const serviceDiagnosticsPending = new Map();
@@ -38,6 +39,7 @@ const serviceStatusPending = new Map();
 const serviceRollbackPending = new Map();
 const serviceScalePending = new Map();
 const TRAEFIK_STATUS_TIMEOUT_MS = 12000;
+const TRAEFIK_DEPLOY_TIMEOUT_MS = 60000;
 const AVAILABLE_PORT_TIMEOUT_MS = 5000;
 const SERVICE_LOGS_TIMEOUT_MS = 8000;
 const SERVICE_STATUS_TIMEOUT_MS = 5000;
@@ -201,7 +203,7 @@ const server = http.createServer(async (req, res) => {
     const conn = getFirstAgent();
     if (!conn) {
       res.setHeader("Content-Type", "application/json");
-      res.end(JSON.stringify({ running: false, error: "No agent connected" }));
+      res.end(JSON.stringify({ running: false, dockerAvailable: false, error: "No agent connected" }));
       return;
     }
     const requestId = "ts-" + Date.now() + "-" + Math.random().toString(36).slice(2, 9);
@@ -216,12 +218,12 @@ const server = http.createServer(async (req, res) => {
     });
     try {
       conn.ws.send(JSON.stringify({ type: "get-traefik-status", requestId }));
-      const running = await promise;
+      const result = await promise;
       res.setHeader("Content-Type", "application/json");
-      res.end(JSON.stringify({ running: !!running }));
+      res.end(JSON.stringify({ running: !!result.running, dockerAvailable: !!result.dockerAvailable }));
     } catch (err) {
       res.setHeader("Content-Type", "application/json");
-      res.end(JSON.stringify({ running: false, error: err.message || "timeout" }));
+      res.end(JSON.stringify({ running: false, dockerAvailable: false, error: err.message || "timeout" }));
     }
     return;
   }
@@ -230,23 +232,46 @@ const server = http.createServer(async (req, res) => {
     let body = "";
     req.on("data", (chunk) => { body += chunk; });
     req.on("end", () => {
-      try {
-        const payload = JSON.parse(body || "{}");
-        const yaml = payload.yaml;
-        if (typeof yaml !== "string" || !yaml.trim()) {
-          res.statusCode = 400;
+      (async () => {
+        try {
+          const payload = JSON.parse(body || "{}");
+          const yaml = payload.yaml;
+          if (typeof yaml !== "string" || !yaml.trim()) {
+            res.statusCode = 400;
+            res.setHeader("Content-Type", "application/json");
+            res.end(JSON.stringify({ error: "yaml required" }));
+            return;
+          }
+          const conn = getFirstAgent();
+          if (!conn) {
+            res.setHeader("Content-Type", "application/json");
+            res.end(JSON.stringify({ ok: false, error: "No agent connected" }));
+            return;
+          }
+          const requestId = "td-" + Date.now() + "-" + Math.random().toString(36).slice(2, 9);
+          const promise = new Promise((resolve, reject) => {
+            traefikDeployPending.set(requestId, { resolve, reject });
+            setTimeout(() => {
+              if (traefikDeployPending.has(requestId)) {
+                traefikDeployPending.delete(requestId);
+                reject(new Error("timeout"));
+              }
+            }, TRAEFIK_DEPLOY_TIMEOUT_MS);
+          });
+          conn.ws.send(JSON.stringify({ type: "deploy-traefik", requestId, yaml }));
+          const result = await promise;
           res.setHeader("Content-Type", "application/json");
-          res.end(JSON.stringify({ error: "yaml required" }));
-          return;
+          if (result.success) {
+            res.end(JSON.stringify({ ok: true }));
+          } else {
+            res.end(JSON.stringify({ ok: false, error: result.error || "Deploy failed" }));
+          }
+        } catch (err) {
+          res.statusCode = 503;
+          res.setHeader("Content-Type", "application/json");
+          res.end(JSON.stringify({ ok: false, error: err.message || "Deploy failed" }));
         }
-        const sent = dispatchJob({ type: "deploy-traefik", yaml });
-        res.setHeader("Content-Type", "application/json");
-        res.end(JSON.stringify({ ok: sent, error: sent ? null : "No agent connected" }));
-      } catch (err) {
-        res.statusCode = 400;
-        res.setHeader("Content-Type", "application/json");
-        res.end(JSON.stringify({ error: String(err.message) }));
-      }
+      })();
     });
     return;
   }
@@ -591,7 +616,13 @@ wss.on("connection", (ws) => {
         const pending = traefikStatusPending.get(msg.requestId);
         if (pending) {
           traefikStatusPending.delete(msg.requestId);
-          pending.resolve(msg.running === true);
+          pending.resolve({ running: msg.running === true, dockerAvailable: msg.dockerAvailable === true });
+        }
+      } else if (msg.type === "traefik-deploy-result" && msg.requestId != null) {
+        const pending = traefikDeployPending.get(msg.requestId);
+        if (pending) {
+          traefikDeployPending.delete(msg.requestId);
+          pending.resolve({ success: msg.success === true, error: msg.error || null });
         }
       } else if (msg.type === "available-port" && msg.requestId != null) {
         const pending = availablePortPending.get(msg.requestId);
