@@ -122,6 +122,7 @@ export function DomainSetting({
   }, []);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- sync domain from props on change
     setSelected(currentDomain ?? "");
   }, [currentDomain]);
 

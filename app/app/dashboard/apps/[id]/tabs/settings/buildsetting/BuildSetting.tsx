@@ -21,12 +21,6 @@ export function BuildSetting({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    setEntry(entryCommand ?? "");
-    setBuild(buildCommand ?? "");
-    setOutputDir(outputDirectory ?? "");
-  }, [entryCommand, buildCommand, outputDirectory]);
-
   async function save() {
     setError(null);
     setSaving(true);

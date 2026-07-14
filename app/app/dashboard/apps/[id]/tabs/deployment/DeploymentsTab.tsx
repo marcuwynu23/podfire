@@ -42,7 +42,9 @@ export function DeploymentsTab({
     null;
 
   useEffect(() => {
-    if (currentPage > totalPages) setCurrentPage(1);
+    if (currentPage > totalPages)
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- correct page on list shrink
+      setCurrentPage(1);
   }, [currentPage, totalPages]);
 
   useEffect(() => {
@@ -50,6 +52,7 @@ export function DeploymentsTab({
       deployments.length > 0 &&
       !deployments.some((d) => d.id === selectedDeploymentId)
     ) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- correct selection on list change
       setSelectedDeploymentId(deployments[0]?.id ?? null);
     }
   }, [deployments, selectedDeploymentId]);

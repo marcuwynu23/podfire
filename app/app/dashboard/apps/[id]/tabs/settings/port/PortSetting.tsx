@@ -19,6 +19,7 @@ export function PortSetting({
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- sync port from props on change
     setPort(String(currentPort ?? ""));
   }, [currentPort]);
 

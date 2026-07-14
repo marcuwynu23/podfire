@@ -90,10 +90,6 @@ export function DeployModeSetting({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    setMode(deployMode === "auto" ? "auto" : "manual");
-  }, [deployMode]);
-
   async function save() {
     setError(null);
     setSaving(true);

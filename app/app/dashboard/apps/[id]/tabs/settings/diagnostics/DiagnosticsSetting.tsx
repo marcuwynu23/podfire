@@ -15,10 +15,6 @@ export function DiagnosticsSetting({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    setEnabled(diagnosticsEnabled);
-  }, [diagnosticsEnabled]);
-
   async function save() {
     setError(null);
     setSaving(true);

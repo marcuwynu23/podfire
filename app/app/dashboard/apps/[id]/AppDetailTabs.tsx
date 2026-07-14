@@ -51,6 +51,7 @@ export function AppDetailTabs({
 
   useEffect(() => {
     if (activeTab === "diagnostics" && !diagnosticsEnabled) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- correct tab fallback
       setActiveTab("info");
     }
   }, [activeTab, diagnosticsEnabled]);
@@ -75,6 +76,7 @@ export function AppDetailTabs({
   const [replicasError, setReplicasError] = useState<string | null>(null);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- sync replicas from props on change
     setReplicas(String(currentReplicas));
   }, [currentReplicas]);
 

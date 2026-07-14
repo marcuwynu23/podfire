@@ -56,10 +56,13 @@ export function CreateAppForm({
 
   useEffect(() => {
     if (!selectedRepo) {
+      /* eslint-disable react-hooks/set-state-in-effect -- clear branch state on repo change */
       setBranches([]);
       setBranch("");
+      /* eslint-enable react-hooks/set-state-in-effect */
       return;
     }
+
     fetch(`/api/github/branches?repo=${encodeURIComponent(selectedRepo)}`)
       .then((r) => r.json())
       .then((data) => {
