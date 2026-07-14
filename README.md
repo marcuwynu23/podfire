@@ -30,7 +30,6 @@
 - [Architecture](#architecture)
 - [Installation](#installation)
 - [Quick Start](#quick-start)
-- [Project Structure](#project-structure)
 - [Development](#development)
 - [License](#license)
 
@@ -111,21 +110,23 @@
 
 ## Architecture
 
-```
-┌─────────────┐     ┌──────────────┐     ┌──────────────┐     ┌────────────────┐
-│  Dashboard   │────▶│  App Server  │────▶│  Gateway      │────▶│  Agent (TS/Go) │
-│  (Next.js)   │     │  (API Routes)│     │  (WebSocket)  │     │  (Docker)      │
-└─────────────┘     └──────────────┘     └──────────────┘     └────────────────┘
-       │                                                               │
-       │                      ┌──────────────────┐                    │
-       └──────────────────────│  Traefik (Proxy)  │◀───────────────────┘
-                              │  port 80 / 443    │
-                              └──────────────────┘
-                                       │
-                              ┌────────────────┐
-                              │  Your Service   │
-                              │  (Docker Swarm) │
-                              └────────────────┘
+```mermaid
+flowchart LR
+  A["Dashboard<br/>(Next.js)"]
+  B["App Server<br/>(API Routes)"]
+  C["Gateway<br/>(WebSocket)"]
+  D["Agent<br/>(TypeScript / Go)"]
+  E["Traefik<br/>(Reverse Proxy)"]
+  F["Your Service<br/>(Docker Swarm)"]
+
+  A -->|"HTTP"| B
+  B -->|"HTTP"| C
+  C ==>|"WebSocket"| D
+  D -.->|"deploy / update"| E
+  E -->|"route 80/443"| F
+  D -.->|"logs & status"| C
+  C -.->|"logs & status"| B
+  B -.->|"logs & status"| A
 ```
 
 - **Dashboard** — Next.js app with GitHub OAuth, service management, and deployment UI
@@ -205,46 +206,6 @@ pnpm start
 #    - Dashboard → Apps → New App
 #    - Select a repository, click Create
 #    - The app deploys automatically
-```
-
----
-
-## Project Structure
-
-```
-podfire/
-├── app/                          # Web dashboard & API (Next.js 16)
-│   ├── app/
-│   │   ├── api/                  # API routes (deploy, services, traefik, auth, etc.)
-│   │   └── dashboard/            # UI pages (apps, admin-settings, agents)
-│   ├── lib/                      # Shared libraries (deploy-dispatch, stack, auth, etc.)
-│   ├── prisma/                   # Prisma schema and migrations
-│   ├── docker-templates/         # Dockerfile templates (express, nextjs, vite)
-│   ├── traefik/                  # Traefik stack configuration
-│   └── agent-gateway.js          # WebSocket gateway entrypoint
-│
-├── agent/                        # Deploy agent (TypeScript)
-│   ├── lib/                      # Core modules (docker, stack, template-loader, etc.)
-│   ├── docker-templates/         # Dockerfile templates (mirror of app templates)
-│   ├── run.ts                    # Agent entrypoint
-│   └── vitest.config.ts          # Test configuration
-│
-├── agent-go/                     # Deploy agent (Go)
-│   ├── internal/
-│   │   ├── docker/               # Docker utilities (sanitize, image tag, port detection)
-│   │   ├── stack/                # Swarm stack YAML generation and deployment
-│   │   ├── template/             # Dockerfile template system
-│   │   ├── framework/            # Framework detection
-│   │   ├── run/                  # Command execution
-│   │   ├── port/                 # Available port allocation
-│   │   └── diagnostics/          # Service diagnostics
-│   ├── main.go                   # Agent entrypoint
-│   └── Makefile                  # Build system
-│
-├── docs/                         # Documentation assets
-├── README.md                     # This file
-├── USER-GUIDE.md                 # Comprehensive user guide
-└── CONTRIBUTING.md               # Contributor guide
 ```
 
 ---
