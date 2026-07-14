@@ -7,6 +7,7 @@ import { DiagnosticsSetting } from "./diagnostics/DiagnosticsSetting";
 import { BuildSetting } from "./buildsetting/BuildSetting";
 import { PortSetting } from "./port/PortSetting";
 import { DangerZoneSetting } from "./danger-zone/DangerZoneSetting";
+import { EnvSetting } from "./env/EnvSetting";
 
 export function SettingsPanel({
   serviceId,
@@ -18,6 +19,7 @@ export function SettingsPanel({
   entryCommand,
   buildCommand,
   outputDirectory,
+  env,
   onSaved,
 }: {
   serviceId: string;
@@ -29,13 +31,14 @@ export function SettingsPanel({
   entryCommand?: string | null;
   buildCommand?: string | null;
   outputDirectory?: string | null;
+  env?: string | null;
   onSaved: () => void;
 }) {
   return (
     <div className="p-4 sm:p-6">
       <h2 className="text-base font-semibold text-gl-text">Settings</h2>
       <p className="mt-0.5 text-sm text-gl-text-muted">
-        Domain, container port, deploy mode, diagnostics, build options, and danger zone.
+        Domain, container port, deploy mode, diagnostics, build options, environment variables, and danger zone.
       </p>
 
       <div className="mt-4 sm:mt-6">
@@ -77,6 +80,14 @@ export function SettingsPanel({
             entryCommand={entryCommand ?? null}
             buildCommand={buildCommand ?? null}
             outputDirectory={outputDirectory ?? null}
+            onSaved={onSaved}
+          />
+        </AccordionSection>
+
+        <AccordionSection id="envSection" title="Environment variables" defaultOpen>
+          <EnvSetting
+            serviceId={serviceId}
+            currentEnv={env ?? null}
             onSaved={onSaved}
           />
         </AccordionSection>

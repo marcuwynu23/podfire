@@ -440,6 +440,7 @@ export function AppDetailTabs({
             outputDirectory={
               (service as {outputDirectory?: string | null}).outputDirectory ?? null
             }
+            env={(service as {env?: string | null}).env ?? null}
             onSaved={() => router.refresh()}
           />
         )}
