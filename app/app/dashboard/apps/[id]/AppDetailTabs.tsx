@@ -48,6 +48,8 @@ export function AppDetailTabs({
   const overflowTabs = visibleTabs.slice(4);
   const [moreOpen, setMoreOpen] = useState(false);
   const moreRef = useRef<HTMLDivElement>(null);
+  const [warmingUp, setWarmingUp] = useState(false);
+  const wasBusyRef = useRef(false);
 
   useEffect(() => {
     if (activeTab === "diagnostics" && !diagnosticsEnabled) {
@@ -55,6 +57,17 @@ export function AppDetailTabs({
       setActiveTab("info");
     }
   }, [activeTab, diagnosticsEnabled]);
+
+  useEffect(() => {
+    const busy = BUSY_STATUSES.includes(status);
+    if (wasBusyRef.current && !busy && status !== "—") {
+      setWarmingUp(true);
+      const timer = setTimeout(() => setWarmingUp(false), 5000);
+      wasBusyRef.current = false;
+      return () => clearTimeout(timer);
+    }
+    wasBusyRef.current = busy;
+  }, [status]);
 
   useEffect(() => {
     if (!moreOpen) return;
@@ -371,6 +384,7 @@ export function AppDetailTabs({
             stackName={service.stackName ?? service.name}
             currentReplicas={currentReplicas}
             appUrl={appUrl}
+            warmingUp={warmingUp}
           />
         )}
 
