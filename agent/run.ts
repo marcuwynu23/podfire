@@ -458,7 +458,7 @@ function connect(): WebSocket {
         const filter = `${safe}_app`;
         // Get currently running container IDs for this service
         const ls = runCommand(
-          `docker container ls --filter name=${filter} --format '{{.ID}}' 2>&1`,
+          `docker container ls --filter label=com.docker.swarm.service.name=${filter} --format '{{.ID}}' 2>&1`,
         );
         const containerIds = (ls.stdout || "").trim().split(/\s+/).filter(Boolean);
         if (containerIds.length === 0) {
@@ -467,12 +467,13 @@ function connect(): WebSocket {
         }
         const logs: string[] = [];
         for (const cid of containerIds) {
-          const result = runCommand(`docker logs ${cid} --tail 1000 2>&1`);
+          const shortId = cid.substring(0, 12);
+          const result = runCommand(`docker logs ${shortId} --tail 1000 2>&1`);
           const part = [result.stdout, result.stderr].filter(Boolean).join("\n").trim();
           if (part) {
-            // Prefix with container short ID so the log viewer can distinguish replicas
-            const shortId = cid.substring(0, 12);
             logs.push(`[${shortId}] ${part}`);
+          } else if (!result.success) {
+            logs.push(`[${shortId}] (container no longer available)`);
           }
         }
         if (ws.readyState === WebSocket.OPEN) {

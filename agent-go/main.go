@@ -491,7 +491,7 @@ func handleServiceLogs(conn *websocket.Conn, msg map[string]interface{}) {
 	filter := safe + "_app"
 
 	// Get currently running container IDs for this service
-	lsRes := run.Run("docker container ls --filter name="+filter+" --format '{{.ID}}' 2>&1", "")
+	lsRes := run.Run("docker container ls --filter label=com.docker.swarm.service.name="+filter+" --format '{{.ID}}' 2>&1", "")
 	containerIDs := strings.Fields(lsRes.Stdout)
 
 	if len(containerIDs) == 0 {
@@ -501,17 +501,16 @@ func handleServiceLogs(conn *websocket.Conn, msg map[string]interface{}) {
 
 	var allLogs []string
 	for _, cid := range containerIDs {
-		res := run.Run("docker logs "+cid+" --tail 1000 2>&1", "")
+		shortID := cid
+		if len(shortID) > 12 {
+			shortID = shortID[:12]
+		}
+		res := run.Run("docker logs "+shortID+" --tail 1000 2>&1", "")
 		part := strings.TrimSpace(res.Stdout + "\n" + res.Stderr)
 		if part != "" {
-			// Prepend the container hostname so the log viewer can distinguish replicas
-			hostRes := run.Run("docker inspect --format '{{.Config.Hostname}}' "+cid+" 2>&1", "")
-			hostname := strings.TrimSpace(hostRes.Stdout)
-			prefix := filter
-			if hostname != "" {
-				prefix = hostname
-			}
-			allLogs = append(allLogs, "["+prefix+"] "+part)
+			allLogs = append(allLogs, "["+shortID+"] "+part)
+		} else if !res.Success {
+			allLogs = append(allLogs, "["+shortID+"] (container no longer available)")
 		}
 	}
 
