@@ -91,7 +91,18 @@ export async function POST(request: Request) {
       deployMode: mode,
     },
   });
-  createAndDispatchDeployment(service.id, userId, {}).catch(() => {});
+  // Create deployment record immediately so the detail page sees it
+  const initialDeployment = await prisma.deployment.create({
+    data: {
+      serviceId: service.id,
+      status: "queued",
+      logs: "Preparing deployment.\n",
+    },
+  });
+  // Dispatch to agent in the background (reuses the existing deployment record)
+  import("@/lib/deploy-dispatch").then(({ dispatchDeployment }) => {
+    dispatchDeployment(service.id, userId, initialDeployment.id, {}).catch(() => {});
+  });
 
   return NextResponse.json(service);
 }

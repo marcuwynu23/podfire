@@ -70,6 +70,63 @@ export async function buildDeployJob(serviceId: string, userId: string, options?
 }
 
 /**
+ * Dispatch to gateway using an existing deployment record. Does not check auth (caller must ensure).
+ */
+export async function dispatchDeployment(
+  serviceId: string,
+  userId: string,
+  deploymentId: string,
+  extra: { retryCount?: number; commitSha?: string | null; commitMessage?: string | null }
+): Promise<DeployDispatchResult> {
+  const built = await buildDeployJob(serviceId, userId, {
+    commitSha: extra.commitSha ?? undefined,
+    commitMessage: extra.commitMessage ?? undefined,
+  });
+  if (!built) {
+    await prisma.deployment.update({
+      where: { id: deploymentId },
+      data: { status: "failed", logs: "Service not found.\n" },
+    });
+    return { ok: false, error: "Service not found", status: 404 };
+  }
+  const { job } = built;
+  const payload = { ...job, deploymentId };
+  try {
+    const res = await gatewayFetch("/dispatch", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    const data = (await res.json()) as { ok?: boolean; queued?: boolean };
+    if (!res.ok || !data.ok) {
+      await prisma.deployment.update({
+        where: { id: deploymentId },
+        data: { status: "failed", logs: "Failed to send job to agent.\n" },
+      });
+      return { ok: false, error: "Dispatch failed", status: 503 };
+    }
+    if (data.queued) {
+      await prisma.deployment.update({
+        where: { id: deploymentId },
+        data: { status: "queued", logs: "Queued; will run when an agent is available.\n" },
+      });
+    } else {
+      await prisma.deployment.update({
+        where: { id: deploymentId },
+        data: { status: "building", logs: "Dispatched to agent.\n" },
+      });
+    }
+  } catch {
+    await prisma.deployment.update({
+      where: { id: deploymentId },
+      data: { status: "failed", logs: "Failed to reach agent gateway.\n" },
+    });
+    return { ok: false, error: "Gateway unreachable", status: 503 };
+  }
+  return { ok: true, deploymentId };
+}
+
+/**
  * Create a deployment record and dispatch to gateway. Does not check auth (caller must ensure).
  */
 export async function createAndDispatchDeployment(
