@@ -22,8 +22,65 @@ import {
   isDockerAvailable,
 } from "./lib/stack.js";
 import {runCommand, runCommandStream, formatOutput} from "./lib/run-command.js";
+import {spawn, ChildProcess} from "child_process";
 import {getAvailablePort} from "./lib/available-port.js";
 import {runServiceDiagnostics} from "./lib/service-diagnostics.js";
+
+type FollowSession = {
+  serviceName: string;
+  proc: ChildProcess;
+  lines: string[];
+  lineCount: number;
+};
+
+const followSessions = new Map<string, FollowSession>();
+
+function startFollowSession(serviceName: string): FollowSession | null {
+  const existing = followSessions.get(serviceName);
+  if (existing) return existing;
+
+  const proc = spawn(
+    `docker service logs ${serviceName} --tail 0 -f 2>&1`,
+    [],
+    {shell: true, stdio: ["ignore", "pipe", "pipe"]},
+  );
+  if (!proc.stdout) return null;
+
+  const session: FollowSession = {serviceName, proc, lines: [], lineCount: 0};
+  followSessions.set(serviceName, session);
+
+  proc.stdout.setEncoding("utf8");
+  proc.stdout.on("data", (chunk: string) => {
+    const newLines = chunk.split(/\r?\n/).filter((s) => s.length > 0);
+    for (const line of newLines) {
+      if (session.lines.length >= 1000) session.lines.shift();
+      session.lines.push(line);
+      session.lineCount++;
+    }
+  });
+  proc.stderr?.setEncoding("utf8");
+  proc.stderr?.on("data", (chunk: string) => {
+    const newLines = chunk.split(/\r?\n/).filter((s) => s.length > 0);
+    for (const line of newLines) {
+      if (session.lines.length >= 1000) session.lines.shift();
+      session.lines.push(line);
+      session.lineCount++;
+    }
+  });
+  proc.on("exit", () => {
+    followSessions.delete(serviceName);
+  });
+
+  return session;
+}
+
+function stopFollowSession(serviceName: string) {
+  const session = followSessions.get(serviceName);
+  if (session) {
+    session.proc.kill();
+    followSessions.delete(serviceName);
+  }
+}
 
 type DeployPayload = {
   deploymentId: string;
@@ -455,29 +512,57 @@ function connect(): WebSocket {
         const requestId = msg.requestId as string;
         const stackName = String(msg.stackName).trim();
         const safe = sanitizeForDocker(stackName);
-        const filter = `${safe}_app`;
-        // Get currently running container IDs for this service
-        const ls = runCommand(
-          `docker container ls --filter label=com.docker.swarm.service.name=${filter} --format '{{.ID}}' 2>&1`,
-        );
-        const containerIds = (ls.stdout || "").trim().split(/\s+/).filter(Boolean);
-        if (containerIds.length === 0) {
-          ws.send(JSON.stringify({type: "service-logs", requestId, logs: "(no running containers)"}));
-          return;
-        }
-        const logs: string[] = [];
-        for (const cid of containerIds) {
-          const shortId = cid.substring(0, 12);
-          const result = runCommand(`docker logs ${shortId} --tail 1000 2>&1`);
-          const part = [result.stdout, result.stderr].filter(Boolean).join("\n").trim();
-          if (part) {
-            logs.push(`[${shortId}] ${part}`);
-          } else if (!result.success) {
-            logs.push(`[${shortId}] (container no longer available)`);
+        const serviceName = `${safe}_app`;
+        const follow = msg.follow === true || msg.follow === "true";
+        const cursor = typeof msg.cursor === "number" ? msg.cursor : parseInt(String(msg.cursor ?? ""), 10) || -1;
+        const stopFollow = msg.stopFollow === true || msg.stopFollow === "true";
+
+        if (stopFollow) {
+          stopFollowSession(serviceName);
+          if (ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({type: "service-logs", requestId, logs: null, append: false}));
           }
-        }
-        if (ws.readyState === WebSocket.OPEN) {
-          ws.send(JSON.stringify({type: "service-logs", requestId, logs: logs.join("\n---\n") || "(no logs)"}));
+        } else if (follow && cursor >= 0) {
+          // Subsequent poll — return only new lines since cursor
+          const session = startFollowSession(serviceName);
+          if (session) {
+            const firstStored = Math.max(0, session.lineCount - session.lines.length);
+            const newLines = cursor < session.lineCount
+              ? session.lines.slice(Math.max(0, cursor - firstStored))
+              : [];
+            const newCursor = session.lineCount;
+            if (ws.readyState === WebSocket.OPEN) {
+              ws.send(JSON.stringify({
+                type: "service-logs",
+                requestId,
+                lines: newLines.join("\n"),
+                cursor: newCursor,
+                append: true,
+              }));
+            }
+          } else {
+            const result = runCommand(`docker service logs ${serviceName} --tail 1000 2>&1`);
+            const logs = result.success ? result.stdout.trim() : "(no logs)";
+            if (ws.readyState === WebSocket.OPEN) {
+              ws.send(JSON.stringify({type: "service-logs", requestId, logs, cursor: 0, append: true}));
+            }
+          }
+        } else if (follow) {
+          // Initial follow request — start session and return snapshot
+          startFollowSession(serviceName);
+          const result = runCommand(`docker service logs ${serviceName} --tail 1000 2>&1`);
+          const logs = result.success ? result.stdout.trim() : "(no logs)";
+          const lineCount = logs === "(no logs)" ? 0 : logs.split("\n").length;
+          if (ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({type: "service-logs", requestId, logs, cursor: lineCount, append: false}));
+          }
+        } else {
+          // Simple one-shot (no follow)
+          const result = runCommand(`docker service logs ${serviceName} --tail 1000 2>&1`);
+          const logs = result.success ? result.stdout.trim() : "(no logs)";
+          if (ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({type: "service-logs", requestId, logs, append: false}));
+          }
         }
       } else if (
         msg.type === "get-service-status" &&
