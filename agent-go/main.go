@@ -295,6 +295,19 @@ func runDeployFromJob(conn *websocket.Conn, p *DeployPayload) {
 	sendLog("Detected framework: " + string(fw))
 	sendLog("")
 
+	// Override port with source-detected port if available
+	if detectedPort := docker.DetectPortFromSource(repoPath); detectedPort > 0 {
+		sendLog("Detected container port from source: " + strconv.Itoa(detectedPort))
+		p.Port = detectedPort
+		if p.Env == nil {
+			p.Env = make(map[string]string)
+		}
+		p.Env["PORT"] = strconv.Itoa(p.Port)
+	} else {
+		sendLog("No port detected from source; using port " + strconv.Itoa(p.Port))
+	}
+	sendLog("")
+
 	if fw != framework.FrameworkCustom {
 		sendLog("=== PHASE 3: COPY DOCKER TEMPLATE ===")
 		opts := &template.Options{

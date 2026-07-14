@@ -5,6 +5,7 @@ import * as os from "os";
 import * as path from "path";
 import WebSocket from "ws";
 import {detectFramework} from "./lib/framework-detector.js";
+import {detectPortFromSource} from "./lib/port-detector.js";
 import {copyTemplateToRepo} from "./lib/template-loader.js";
 import {
   getImageTag,
@@ -136,12 +137,23 @@ function runDeployFromJob(
         sendLog("");
       }
 
+      sendLog("=== PHASE 4: DETECT CONTAINER PORT ===");
+      const detectedPort = detectPortFromSource(repoPath);
+      if (detectedPort) {
+        sendLog(`Detected container port from source: ${detectedPort}`);
+        port = detectedPort;
+        payload.env = { ...(payload.env ?? {}), PORT: String(port) };
+      } else {
+        sendLog("No port detected from source; using port " + port);
+      }
+      sendLog("");
+
       phaseStart = Date.now();
-      sendLog("=== PHASE 4: BUILD DOCKER IMAGE ===");
+      sendLog("=== PHASE 5: BUILD DOCKER IMAGE ===");
       const buildCmd = `docker build --progress=plain -t ${imageTag} .`;
       sendLog(`Command: ${buildCmd}`);
       sendLog(`Cwd:     ${repoPath}`);
-      sendLog("Streaming build output (--progress=plain):");
+      sendLog("Streaming build output:");
       sendLog("----------------------------------------");
       const buildStream = await runCommandStream(
         buildCmd,
@@ -165,14 +177,14 @@ function runDeployFromJob(
       sendLog(`Using container port ${port}`);
 
       if (useLocalOnly()) {
-        sendLog("=== PHASE 5: SKIP PUSH (local only) ===");
+        sendLog("=== PHASE 6: SKIP PUSH (local only) ===");
         sendLog("Using local image (no registry push).");
         sendPhase("push", 0);
         sendLog("");
       } else {
         phaseStart = Date.now();
         sendStatus("pushing");
-        sendLog("=== PHASE 5: PUSH IMAGE TO REGISTRY ===");
+        sendLog("=== PHASE 6: PUSH IMAGE TO REGISTRY ===");
         const pushCmd = `docker push ${imageTag}`;
         sendLog(`Command: ${pushCmd}`);
         sendLog("Streaming push output:");
@@ -218,7 +230,7 @@ function runDeployFromJob(
         typeof payload.memoryLimit === "string"
           ? payload.memoryLimit.trim() || undefined
           : undefined;
-      sendLog("=== PHASE 6: DEPLOY STACK ===");
+      sendLog("=== PHASE 7: DEPLOY STACK ===");
       sendLog(`Stack name:  ${stack}`);
       sendLog(`Image:       ${imageTag}`);
       sendLog(
