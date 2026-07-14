@@ -5,7 +5,7 @@ import * as os from "os";
 import * as path from "path";
 import WebSocket from "ws";
 import {detectFramework} from "./lib/framework-detector.js";
-import {detectPortFromSource} from "./lib/port-detector.js";
+import {detectPortFromSource, detectPortFromDockerfile} from "./lib/port-detector.js";
 import {copyTemplateToRepo} from "./lib/template-loader.js";
 import {
   getImageTag,
@@ -138,13 +138,20 @@ function runDeployFromJob(
       }
 
       sendLog("=== PHASE 4: DETECT CONTAINER PORT ===");
-      const detectedPort = detectPortFromSource(repoPath);
-      if (detectedPort) {
-        sendLog(`Detected container port from source: ${detectedPort}`);
-        port = detectedPort;
+      const dockerfilePort = detectPortFromDockerfile(repoPath);
+      if (dockerfilePort) {
+        sendLog(`Detected port from Dockerfile EXPOSE: ${dockerfilePort}`);
+        port = dockerfilePort;
         payload.env = { ...(payload.env ?? {}), PORT: String(port) };
       } else {
-        sendLog("No port detected from source; using port " + port);
+        const sourcePort = detectPortFromSource(repoPath);
+        if (sourcePort) {
+          sendLog(`Detected container port from source: ${sourcePort}`);
+          port = sourcePort;
+          payload.env = { ...(payload.env ?? {}), PORT: String(port) };
+        } else {
+          sendLog("No port detected from Dockerfile or source; using port " + port);
+        }
       }
       sendLog("");
 

@@ -65,3 +65,18 @@ function walkDir(dir: string, depth: number): number | null {
 export function detectPortFromSource(repoPath: string): number | null {
   return walkDir(repoPath, 0);
 }
+
+export function detectPortFromDockerfile(repoPath: string): number | null {
+  const dockerfilePath = path.join(repoPath, "Dockerfile");
+  try {
+    const content = fs.readFileSync(dockerfilePath, "utf-8");
+    const match = content.match(/EXPOSE\s+(\d{2,5})(?:\/tcp|\/udp)?/i);
+    if (match) {
+      const port = parseInt(match[1], 10);
+      if (port >= 1 && port <= 65535) return port;
+    }
+  } catch {
+    // ignore
+  }
+  return null;
+}

@@ -98,3 +98,24 @@ func DetectPortFromSource(repoPath string) int {
 	}
 	return port
 }
+
+var exposePattern = regexp.MustCompile(`EXPOSE\s+(\d{2,5})(?:/tcp|/udp)?`)
+
+// DetectPortFromDockerfile reads the Dockerfile in the repo directory and
+// returns the port specified by the EXPOSE directive, or 0 if not found.
+func DetectPortFromDockerfile(repoPath string) int {
+	dockerfilePath := filepath.Join(repoPath, "Dockerfile")
+	data, err := os.ReadFile(dockerfilePath)
+	if err != nil {
+		return 0
+	}
+	matches := exposePattern.FindStringSubmatch(string(data))
+	if len(matches) < 2 {
+		return 0
+	}
+	port, err := strconv.Atoi(matches[1])
+	if err != nil || port < 1 || port > 65535 {
+		return 0
+	}
+	return port
+}
