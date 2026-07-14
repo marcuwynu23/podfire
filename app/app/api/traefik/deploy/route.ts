@@ -43,13 +43,11 @@ export async function POST(request: Request) {
         {status: 503},
       );
     }
-    return NextResponse.json({ok: true});
-  } catch {
+    return NextResponse.json({ok: true, error: null});
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
     return NextResponse.json(
-      {
-        error:
-          "Start the agent gateway (npm run agent-gateway in the app folder), then start the agent.",
-      },
+      {ok: false, error: message},
       {status: 503},
     );
   }

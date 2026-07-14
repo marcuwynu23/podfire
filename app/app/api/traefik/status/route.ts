@@ -12,22 +12,25 @@ export async function GET() {
   try {
     const res = await gatewayFetch("/traefik/status", { cache: "no-store" });
     const text = await res.text();
-    let data: { running?: boolean; error?: string } = {};
+    let data: { running?: boolean; dockerAvailable?: boolean; error?: string } = {};
     try {
       if (text) data = JSON.parse(text);
     } catch {
       return NextResponse.json({
         running: false,
+        dockerAvailable: false,
         error: "Start the agent gateway (npm run agent-gateway in the app folder), then start the agent.",
       });
     }
     return NextResponse.json({
       running: !!data.running,
+      dockerAvailable: !!data.dockerAvailable,
       error: data.error ?? null,
     });
   } catch {
     return NextResponse.json({
       running: false,
+      dockerAvailable: false,
       error: "Start the agent gateway (npm run agent-gateway in the app folder), then start the agent.",
     });
   }
