@@ -100,7 +100,7 @@ export function AppLogsViewer({
       <pre
         ref={preRef}
         onScroll={handleScroll}
-        className="mt-3 min-h-[28rem] max-h-[36rem] overflow-auto rounded-native-sm border border-gl-edge bg-gl-input-bg p-4 font-mono text-sm leading-relaxed text-gl-text-muted whitespace-pre-wrap"
+        className="scrollbar-thin mt-3 min-h-[28rem] max-h-[36rem] overflow-auto rounded-native-sm border border-gl-edge bg-gl-input-bg p-4 font-mono text-sm leading-relaxed text-gl-text-muted whitespace-pre-wrap"
       >
         {logs ?? (loading ? "Loading…" : "Loading runtime logs…")}
       </pre>

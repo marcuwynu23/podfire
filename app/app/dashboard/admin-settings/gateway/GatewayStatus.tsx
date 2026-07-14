@@ -4,7 +4,7 @@ import {useState, useCallback, useEffect} from "react";
 
 const DASHBOARD_URL = "http://traefik.localhost";
 
-type Status = "idle" | "checking" | "running" | "stopped" | "error";
+type Status = "idle" | "checking" | "running" | "stopped" | "error" | "docker-unavailable";
 
 export function GatewayStatus() {
   const [status, setStatus] = useState<Status>("checking");
@@ -15,8 +15,11 @@ export function GatewayStatus() {
     setErrorMessage(null);
     try {
       const res = await fetch("/api/traefik/status", {cache: "no-store"});
-      const data = (await res.json()) as {running?: boolean; error?: string};
-      if (data.error && !data.running) {
+      const data = (await res.json()) as {running?: boolean; dockerAvailable?: boolean; error?: string};
+      if (data.dockerAvailable === false) {
+        setStatus("docker-unavailable");
+        setErrorMessage("Docker engine is not running. Start Docker Desktop and try again.");
+      } else if (data.error && !data.running) {
         setStatus("error");
         setErrorMessage(data.error);
       } else if (data.running) {
@@ -71,6 +74,11 @@ export function GatewayStatus() {
           <p className="text-sm text-gl-text-muted">
             Gateway is not deployed. Deploy it below to route traffic to your
             apps.
+          </p>
+        )}
+        {status === "docker-unavailable" && (
+          <p className="text-sm text-amber-400">
+            {errorMessage ?? "Docker engine is not running."}
           </p>
         )}
         {status === "error" && (

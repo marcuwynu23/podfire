@@ -78,8 +78,8 @@ export function GatewayActions() {
       headers: {"Content-Type": "application/json"},
       body: JSON.stringify({yaml: yamlToDeploy}),
     });
-    const data = (await res.json()) as {error?: string};
-    if (!res.ok) throw new Error(data.error ?? "Deploy failed");
+    const data = (await res.json()) as {ok?: boolean; error?: string};
+    if (!res.ok || data.ok === false) throw new Error(data.error ?? "Deploy failed");
   }
 
   async function handleUpdate() {
@@ -99,7 +99,7 @@ export function GatewayActions() {
     try {
       await deployWithYaml(yaml);
       setUpdateState("success");
-      setMessage("Configuration updated. Gateway is deploying.");
+      setMessage("Gateway deployed successfully.");
     } catch (err) {
       setUpdateState("error");
       setMessage(err instanceof Error ? err.message : "Update failed");
