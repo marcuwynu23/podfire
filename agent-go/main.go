@@ -427,12 +427,19 @@ func handleUpdateStackLabels(conn *websocket.Conn, msg map[string]interface{}) {
 
 func handleDeployTraefik(conn *websocket.Conn, msg map[string]interface{}) {
 	yaml, _ := msg["yaml"].(string)
+	requestID, _ := msg["requestId"].(string)
 	log.Println("[podfire-agent] Deploy Traefik")
 	if err := stack.DeployTraefikStack(yaml); err != nil {
 		log.Println("[podfire-agent] Traefik deploy error:", err)
+		if requestID != "" {
+			send(conn, map[string]interface{}{"type": "traefik-deploy-result", "requestId": requestID, "success": false, "error": err.Error()})
+		}
 		return
 	}
 	log.Println("[podfire-agent] Traefik deployed")
+	if requestID != "" {
+		send(conn, map[string]interface{}{"type": "traefik-deploy-result", "requestId": requestID, "success": true})
+	}
 }
 
 func handleRemoveTraefik(conn *websocket.Conn) {
@@ -446,8 +453,9 @@ func handleRemoveTraefik(conn *websocket.Conn) {
 
 func handleTraefikStatus(conn *websocket.Conn, msg map[string]interface{}) {
 	requestID, _ := msg["requestId"].(string)
-	running := stack.IsTraefikRunning()
-	send(conn, map[string]interface{}{"type": "traefik-status", "requestId": requestID, "running": running})
+	dockerAvailable := stack.IsDockerAvailable()
+	running := dockerAvailable && stack.IsTraefikRunning()
+	send(conn, map[string]interface{}{"type": "traefik-status", "requestId": requestID, "running": running, "dockerAvailable": dockerAvailable})
 }
 
 func handleAvailablePort(conn *websocket.Conn, msg map[string]interface{}) {

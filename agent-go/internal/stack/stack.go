@@ -193,6 +193,12 @@ func RemoveTraefikStack() error {
 	return nil
 }
 
+// IsDockerAvailable returns true if the Docker daemon is reachable.
+func IsDockerAvailable() bool {
+	res := run.Run("docker info", "")
+	return res.Success
+}
+
 // IsTraefikRunning returns true if the traefik stack has running tasks.
 func IsTraefikRunning() bool {
 	res := run.Run("docker stack ps traefik --no-trunc -q", "")
