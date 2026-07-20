@@ -18,7 +18,7 @@
     "onlyBuiltDependencies": ["esbuild"]
   },
   "devDependencies": {
-    "@types/node": "^22.9.0",
+    "@types/node": "^26.1.1",
     "@types/ws": "^8.5.10",
     "tsx": "^4.19.2",
     "typescript": "^7.0.2",
