@@ -623,8 +623,11 @@
         </p>
         <ul class="hero-tags">
           <li><span>Repository-native</span></li>
-          <li><span>One dashboard</span></li>
-          <li><span>Builds &amp; routing</span></li>
+          <li><span>Framework auto-detect</span></li>
+          <li><span>Auto-deploy</span></li>
+          <li><span>Live logs &amp; diagnostics</span></li>
+          <li><span>Rollbacks &amp; scaling</span></li>
+          <li><span>Self-hosted</span></li>
         </ul>
       </div>
     </header>
@@ -643,7 +646,7 @@
       <section class="feature-section">
         <div class="section-inner">
           <h2>Your infrastructure, your rules</h2>
-          <p>Deploy on your servers, your cloud, or your datacenter. Sign in with your existing repository host, link the repositories and branches you use daily, and add agents wherever you need capacity. Scale by adding more agents—no re-architecture. When you self-host, you keep full control and full visibility for you and your team.</p>
+          <p>Deploy on your servers, your cloud, or your datacenter. Sign in with GitHub, link the repositories and branches you use daily, and add agents wherever you need capacity. Agents run as lightweight workers—TypeScript or a single-binary Go build—and jobs queue automatically when every agent is busy. When you self-host, you keep full control and full visibility for you and your team.</p>
           <a href="https://github.com/marcuwynu23/podfire#readme" class="section-link">Learn more</a>
         </div>
       </section>
@@ -651,7 +654,15 @@
       <section class="feature-section">
         <div class="section-inner">
           <h2>From push to production, automatically</h2>
-          <p>PodFire detects your stack and runs the right build—no custom pipeline scripting required. Enable auto-deploy and go from commit to live in minutes. Spend less time on DevOps and more time writing code. Perfect for modern workflows and fast iteration.</p>
+          <p>PodFire detects your stack and runs the right build—no custom pipeline scripting required. Enable auto-deploy and go from commit to live in minutes. Every deployment is tracked, so a bad release is one click away from being rolled back, and any service can scale from 1 to 32 replicas on the fly. Spend less time on DevOps and more time writing code.</p>
+          <a href="https://github.com/marcuwynu23/podfire#readme" class="section-link">Learn more</a>
+        </div>
+      </section>
+
+      <section class="feature-section">
+        <div class="section-inner">
+          <h2>Know what’s running, down to the container</h2>
+          <p>Live build and container logs stream straight to the browser as they happen. When something breaks, run per-app diagnostics that probe container reachability and Traefik routing and return a clear verdict—so you fix the actual problem instead of guessing.</p>
           <a href="https://github.com/marcuwynu23/podfire#readme" class="section-link">Learn more</a>
         </div>
       </section>
@@ -659,7 +670,7 @@
       <section class="feature-section">
         <div class="section-inner">
           <h2>One dashboard: apps, logs, routing, DNS</h2>
-          <p>Manage all your apps, stream logs, and trigger deploys from one place. The built-in edge gateway and optional managed DNS route your domains to the right services—no manual config. Built for developers who want a clear view of what’s running and where.</p>
+          <p>Manage all your apps, trigger deploys, scale, and roll back from one place. The built-in Traefik edge gateway routes your traffic, and per-domain TLS (Let’s Encrypt or Cloudflare) secures custom domains—no manual config. Built for developers who want a clear view of what’s running and where.</p>
           <a href="https://github.com/marcuwynu23/podfire#readme" class="section-link">Learn more</a>
         </div>
       </section>
