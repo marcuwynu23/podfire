@@ -19,7 +19,7 @@
     "@prisma/client": "^5.22.0",
     "dotenv": "^16.4.5",
     "next": "^16.2.12",
-    "octokit": "^3.1.2",
+    "octokit": "^5.0.5",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "react-syntax-highlighter": "^16.1.1",
