@@ -16,7 +16,7 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "@prisma/client": "^5.22.0",
+    "@prisma/client": "^7.9.1",
     "dotenv": "^16.4.5",
     "next": "^16.2.12",
     "octokit": "^3.1.2",
