@@ -58,8 +58,8 @@ importers:
         specifier: ^16.2.12
         version: 16.2.12(@typescript-eslint/parser@8.64.0(eslint@9.39.5(jiti@2.7.0))(typescript@6.0.3))(eslint@9.39.5(jiti@2.7.0))(typescript@6.0.3)
       postcss:
-        specifier: ^8.4.47
-        version: 8.5.19
+        specifier: ^8.5.26
+        version: 8.5.26
       prisma:
         specifier: ^7.9.1
         version: 7.9.1(@types/react-dom@19.2.4(@types/react@19.2.17))(@types/react@19.2.17)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(typescript@6.0.3)
@@ -2335,8 +2335,8 @@ packages:
     resolution: {integrity: sha512-Tz09sEL2EEuv5fFowm419c1+a/jSMiBjI9gHxVLrVdbUkkNUUfjsVYs9pVZu5oCon/kmRh9TfLEObFtkVxmY0w==}
     engines: {node: '>=8.0.0'}
 
-  nanoid@3.3.16:
-    resolution: {integrity: sha512-bzlKTyNJ7+LdGIIwy8ijFpIqEQIvafahV7eYykJ8Cvh42EdJeODoJ6gUJXpQJvej1BddH8OqTXZNE/KfbWAu8Q==}
+  nanoid@3.3.18:
+    resolution: {integrity: sha512-DTg4MJbGMWkfi6VZFdNt2/caMbQy4Ou+Op/hJQvGEWcnVfoA1QA+xzRKAzw9jD6+GVOOeYr/mIcuDSdug6F6+w==}
     engines: {node: ^10 || ^12 || ^13.7 || ^14 || >=15.0.1}
     hasBin: true
 
@@ -4311,7 +4311,7 @@ snapshots:
       caniuse-lite: 1.0.30001809
       fraction.js: 5.3.4
       picocolors: 1.1.1
-      postcss: 8.5.19
+      postcss: 8.5.26
       postcss-value-parser: 4.2.0
 
   available-typed-arrays@1.0.7:
@@ -5463,7 +5463,7 @@ snapshots:
     dependencies:
       lru.min: 1.1.4
 
-  nanoid@3.3.16: {}
+  nanoid@3.3.18: {}
 
   nanoid@3.3.18: {}
 
