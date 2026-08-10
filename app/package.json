@@ -43,7 +43,7 @@
     "concurrently": "^10.0.4",
     "eslint": "^9.39.5",
     "eslint-config-next": "^16.2.12",
-    "postcss": "^8.4.47",
+    "postcss": "^8.5.26",
     "prisma": "^7.9.1",
     "tailwindcss": "^4.3.3",
     "typescript": "^6.0.3",
