@@ -12,14 +12,14 @@
   },
   "dependencies": {
     "dotenv": "^17.4.2",
-    "ws": "^8.21.2"
+    "ws": "^8.22.0"
   },
   "pnpm": {
     "onlyBuiltDependencies": ["esbuild"]
   },
   "devDependencies": {
     "@types/node": "^26.1.2",
-    "@types/ws": "^8.5.10",
+    "@types/ws": "^8.18.2",
     "tsx": "^4.23.10",
     "typescript": "^7.0.2",
     "vitest": "^4.1.10"
