@@ -22,7 +22,7 @@
     "octokit": "^5.0.5",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
-    "react-syntax-highlighter": "^16.1.1",
+    "react-syntax-highlighter": "^16.1.2",
     "ws": "^8.21.2"
   },
   "pnpm": {
